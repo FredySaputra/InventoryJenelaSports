@@ -34,7 +34,7 @@ class CreatePelangganRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required|string|max:100|unique:pelanggans,id',
+            'id' => ['required','string','max:100','unique:pelanggans,id'],
             'nama' => ['required','max:200'],
             'alamat' => ['required','max:200'],
             'kontak' => ['required','max:20'],

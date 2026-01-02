@@ -16,13 +16,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'id' => 'ADM1',
-            'nama' => 'Admin 1',
-            'noTelp' => '085248239843',
-            'username' => 'admin',
-            'password' => Hash::make('rahasia'),
-            'role' => 'Admin'
+        $this->call([
+            UserSeeder::class,
+            KategoriSeeder::class,
+            SizeSeeder::class,
+            PelangganSeeder::class,
+            BahanSeeder::class,
+            ProdukSeeder::class,
+            StokSeeder::class,
+            TransaksiSeeder::class,
+            DetailTransaksiSeeder::class,
         ]);
 
     }

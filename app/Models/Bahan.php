@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Bahan extends Model
@@ -14,12 +15,14 @@ class Bahan extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'id',
         'nama',
         'deskripsi',
+        'idKategori'
     ];
 
-    public function produk() : HasMany
+    public function kategori() : BelongsTo
     {
-        return $this->hasMany(Produk::class,'idBahan','id');
+        return $this->belongsTo(Kategori::class,'idKategori','id');
     }
 }

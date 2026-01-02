@@ -13,11 +13,17 @@ class Kategori extends Model
     public $incrementing = false;
     public $timestamps = false;
     protected $fillable = [
+        'id',
         'nama'
     ];
 
     public function produk() : HasMany
     {
         return $this->hasMany(Produk::class, 'idKategori', 'id');
+    }
+
+    public function bahan() : HasMany
+    {
+        return $this->hasMany(Bahan::class, 'idKategori', 'id');
     }
 }

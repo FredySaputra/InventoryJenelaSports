@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('bahans', function (Blueprint $table) {
             $table->string('id',100)->primary();
             $table->string('nama',100)->nullable(false);
-            $table->text('deskripsi')->nullable(false);
+            $table->text('deskripsi')->nullable();
+            $table->string('idKategori',100)->nullable(false);
+
+            $table->foreign('idKategori')->on('kategoris')->references('id');
         });
     }
 

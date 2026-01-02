@@ -23,11 +23,6 @@ class Produk extends Model
         return $this->belongsTo(User::class,'idUser','id');
     }
 
-    public function bahan() : BelongsTo
-    {
-        return $this->belongsTo(Bahan::class,'idBahan','id');
-    }
-
     public function kategori() : BelongsTo
     {
         return $this->belongsTo(Kategori::class,'idKategori','id');
