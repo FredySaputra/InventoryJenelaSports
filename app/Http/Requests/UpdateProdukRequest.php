@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StoreSizeRequest extends FormRequest
+class UpdateProdukRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,32 +16,27 @@ class StoreSizeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required|string|max:100|unique:sizes,id',
-            'tipe' => 'required|string|max:100',
-            'panjang' => 'nullable|numeric|min:0',
-            'lebar' => 'nullable|numeric|min:0',
-            'idKategori' => 'required|string|exists:kategoris,id'
+            'nama'       => 'required|string|max:100',
+            'warna'      => 'nullable|string|max:50',
+            'idKategori' => 'required|exists:kategoris,id',
+            'idBahan'    => 'required|exists:bahans,id',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'id.unique' => 'ID Size ini sudah terdaftar, gunakan ID lain.',
-            'id.required' => 'ID Size wajib diisi.',
-            'idKategori.required' => 'Kategori wajib dipilih (Error Sistem).',
             'idKategori.exists' => 'Kategori tidak valid.',
+            'idBahan.exists'    => 'Bahan tidak valid.'
         ];
     }
 
     protected function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
-            'success' =>false,
+            'success' => false,
             'message' => 'Validation errors',
-            'errors' => [
-                $validator->errors()
-            ]
-        ],400));
+            'errors'  => $validator->errors()
+        ], 400));
     }
 }

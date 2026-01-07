@@ -2,46 +2,53 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Size;
+use App\Models\Kategori;
 
 class SizeSeeder extends Seeder
 {
     public function run(): void
     {
+        // Pastikan Kategori ada
+        $this->ensureCategoriesExist();
+
+        // Data Size (Sama seperti sebelumnya)
         $sizes = [
+            // Baju Beladiri (KAT-01)
+            ['id' => 'BJU-S',  'tipe' => 'S',  'panjang' => 60, 'lebar' => 45, 'idKategori' => 'KAT-01'],
+            ['id' => 'BJU-M',  'tipe' => 'M',  'panjang' => 65, 'lebar' => 50, 'idKategori' => 'KAT-01'],
+            ['id' => 'BJU-L',  'tipe' => 'L',  'panjang' => 70, 'lebar' => 55, 'idKategori' => 'KAT-01'],
+            ['id' => 'BJU-XL', 'tipe' => 'XL', 'panjang' => 75, 'lebar' => 60, 'idKategori' => 'KAT-01'],
 
-            ['id' => 'BJU-001', 'tipe' => '5',   'panjang' => 50, 'lebar' => 38],
-            ['id' => 'BJU-002', 'tipe' => '6',   'panjang' => 52, 'lebar' => 40],
-            ['id' => 'BJU-003', 'tipe' => '7',   'panjang' => 54, 'lebar' => 42],
-            ['id' => 'BJU-004', 'tipe' => '8',   'panjang' => 56, 'lebar' => 44],
-            ['id' => 'BJU-005', 'tipe' => '9',   'panjang' => 58, 'lebar' => 46],
+            // Sabuk (KAT-02)
+            ['id' => 'SBK-KCL', 'tipe' => 'Kecil',   'panjang' => 240, 'lebar' => 4, 'idKategori' => 'KAT-02'],
+            ['id' => 'SBK-STD', 'tipe' => 'Standar', 'panjang' => 280, 'lebar' => 4, 'idKategori' => 'KAT-02'],
 
-            ['id' => 'BJU-006', 'tipe' => 'S',   'panjang' => 65, 'lebar' => 48],
-            ['id' => 'BJU-007', 'tipe' => 'M',   'panjang' => 68, 'lebar' => 50],
-            ['id' => 'BJU-008', 'tipe' => 'L',   'panjang' => 71, 'lebar' => 52],
-            ['id' => 'BJU-009', 'tipe' => 'XL',  'panjang' => 74, 'lebar' => 55],
-            ['id' => 'BJU-010', 'tipe' => 'XXL', 'panjang' => 77, 'lebar' => 58],
-            ['id' => 'BJU-011', 'tipe' => '3XL', 'panjang' => 80, 'lebar' => 61],
-            ['id' => 'BJU-012', 'tipe' => '4XL', 'panjang' => 83, 'lebar' => 64],
-
-            ['id' => 'SBK-001', 'tipe' => 'PT',   'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-002', 'tipe' => 'KN',   'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-003', 'tipe' => 'OR',   'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-004', 'tipe' => 'MR',   'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-005', 'tipe' => 'HJ',   'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-006', 'tipe' => 'BR',   'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-007', 'tipe' => 'BB',   'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-008', 'tipe' => 'CO',   'panjang' => 280, 'lebar' => 4.5],
-            ['id' => 'SBK-009', 'tipe' => 'HI',   'panjang' => 300, 'lebar' => 5],
-
-            ['id' => 'SBK-010', 'tipe' => 'PTKN', 'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-011', 'tipe' => 'KNHJ', 'panjang' => 260, 'lebar' => 4],
-            ['id' => 'SBK-012', 'tipe' => 'MRHT', 'panjang' => 260, 'lebar' => 4],
+            // Baju Renang (KAT-03)
+            ['id' => 'RNG-L',  'tipe' => 'L',  'panjang' => 62, 'lebar' => 40, 'idKategori' => 'KAT-03'],
+            ['id' => 'RNG-XL', 'tipe' => 'XL', 'panjang' => 66, 'lebar' => 44, 'idKategori' => 'KAT-03'],
         ];
 
-        foreach ($sizes as $s) {
-            Size::updateOrCreate(['id' => $s['id']], $s);
+        foreach ($sizes as $size) {
+            Size::updateOrCreate(['id' => $size['id']], $size);
+        }
+    }
+
+    private function ensureCategoriesExist()
+    {
+        // HAPUS 'prefix_size' DARI SINI
+        $kategoris = [
+            ['id' => 'KAT-01', 'nama' => 'Baju Beladiri'],
+            ['id' => 'KAT-02', 'nama' => 'Sabuk'],
+            ['id' => 'KAT-03', 'nama' => 'Baju Renang'],
+        ];
+
+        foreach ($kategoris as $k) {
+            if (!Kategori::find($k['id'])) {
+                Kategori::create($k);
+            }
         }
     }
 }

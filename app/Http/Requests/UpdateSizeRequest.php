@@ -26,7 +26,8 @@ class UpdateSizeRequest extends FormRequest
         return [
             'tipe' => 'required|string|max:100',
             'panjang' => 'nullable|numeric|min:0',
-            'lebar' => 'nullable|numeric|min:0'
+            'lebar' => 'nullable|numeric|min:0',
+            'idKategori' => 'nullable|string|exists:kategoris,id'
         ];
     }
 

@@ -5,17 +5,22 @@
 
 @section('content')
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
-            <h3 style="margin:0; font-weight:700; color:#1e293b;">Input Stok</h3>
-            <p style="margin:5px 0 0 0; color:#64748b; font-size:0.9rem;">Kelola jumlah stok per ukuran/varian.</p>
+            <h3 class="fw-bold text-dark m-0">Input Stok</h3>
+            <p class="text-muted small">Kelola jumlah stok per ukuran/varian.</p>
         </div>
-        <button class="btn btn-primary" onclick="loadMatrix()">
-            🔄 Refresh Data
+        <button class="btn btn-primary btn-sm" onclick="loadData()">
+            <i class="fas fa-sync-alt me-1"></i> Refresh Data
         </button>
     </div>
 
-    <div id="matrixContainer"></div>
+    <div id="mainContainer">
+        <div class="text-center py-5 text-muted">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>Memuat matrix stok...</p>
+        </div>
+    </div>
 
 @endsection
 
@@ -23,104 +28,120 @@
     <script>
         const token = localStorage.getItem('api_token');
 
-        async function loadMatrix() {
-            const container = document.getElementById('matrixContainer');
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
 
-            container.innerHTML = `
-            <div style="text-align:center; padding:50px;">
-                <div style="font-size:1.2rem; color:#64748b;">Sedang memuat data stok...</div>
-            </div>`;
+        async function loadData() {
+            // 1. Cari elemen container (Penyebab error sebelumnya jika ini tidak ketemu)
+            const container = document.getElementById('mainContainer');
+            if (!container) {
+                console.error("ERROR FATAL: Elemen <div id='mainContainer'> tidak ditemukan di HTML.");
+                return;
+            }
+
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Sedang memuat data...</p></div>';
 
             try {
                 const res = await fetch('/api/stoks', {
                     headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
                 });
 
-                if(!res.ok) throw new Error("Gagal mengambil data");
+                const json = await res.json();
+                console.log("Response Server:", json); // Cek data di Console F12
 
-                const dataGroups = await res.json();
+                if (!res.ok) throw new Error(json.message || 'Gagal mengambil data');
 
+                const groupedData = json.data || [];
                 container.innerHTML = '';
 
-                if (dataGroups.length === 0) {
+                // Jika data kosong
+                if (groupedData.length === 0) {
                     container.innerHTML = `
-                    <div style="text-align:center; padding:40px; background:white; border-radius:8px; border:1px dashed #cbd5e1;">
-                        <h4 style="color:#64748b;">Data Kosong</h4>
-                        <p>Belum ada produk atau kategori yang diatur.</p>
+                    <div class="alert alert-warning text-center p-5">
+                        <h4>Data Kosong</h4>
+                        <p>Pastikan Anda sudah membuat Kategori, Size, dan Produk.</p>
                     </div>`;
                     return;
                 }
 
-                dataGroups.forEach(group => {
+                // Loop per Kategori
+                groupedData.forEach(group => {
+                    const sizes = group.sizes || [];
+                    const produks = group.produks || [];
 
-                    let headerCols = '';
-                    group.sizes.forEach(size => {
-                        headerCols += `
-                        <th style="padding:10px 5px; text-align:center; min-width:45px; background:#f8fafc; font-size:0.85rem; border-bottom:2px solid #e2e8f0; color:#475569;">
-                            ${size.tipe}
-                        </th>
-                    `;
-                    });
+                    // Skip render jika kategori ini kosong melompong
+                    if (sizes.length === 0 && produks.length === 0) return;
 
-                    let bodyRows = '';
-                    group.produks.forEach(prod => {
-
-                        let inputCols = '';
-                        group.sizes.forEach(size => {
-                            const stokData = prod.stoks.find(s => s.idSize == size.id);
-                            const val = stokData ? stokData.stok : ''; // Jika 0 atau null, biarkan kosong
-
-                            inputCols += `
-                            <td style="padding:0; border:1px solid #f1f5f9; height:40px;">
-                                <input type="number"
-                                    value="${val}"
-                                    placeholder="0"
-                                    title="${prod.nama} - Ukuran ${size.tipe}"
-                                    style="width:100%; height:100%; border:none; text-align:center; outline:none; font-size:0.9rem; background:transparent;"
-                                    onfocus="this.style.background='#eff6ff'; this.parentNode.style.border='1px solid #3b82f6';"
-                                    onblur="this.style.background='transparent'; this.parentNode.style.border='1px solid #f1f5f9';"
-                                    onchange="updateStok(this, '${prod.id}', '${size.id}')"
-                                >
-                            </td>
-                        `;
+                    // A. Header Kolom (Size)
+                    let thSizes = '';
+                    if (sizes.length > 0) {
+                        sizes.forEach(size => {
+                            thSizes += `<th class="text-center bg-light" style="width: 80px;">${size.tipe}</th>`;
                         });
+                    } else {
+                        thSizes = `<th class="text-center bg-light text-danger">Belum ada Size</th>`;
+                    }
 
-                        const displayName = prod.nama_lengkap || prod.nama;
-                        bodyRows += `
-                        <tr style="transition:background 0.2s;" onmouseover="this.style.background='#fcfcfc'" onmouseout="this.style.background='white'">
-                            <td style="padding:10px 15px; font-weight:500; border-right:2px solid #f1f5f9; color:#334155; white-space:nowrap; background:white; position:sticky; left:0; z-index:10;">
-                                ${displayName}
-                                <div style="font-size:0.75rem; color:#94a3b8;">${prod.warna || ''}</div>
-                            </td>
-                            ${inputCols}
-                        </tr>
-                    `;
-                    });
+                    // B. Baris (Produk)
+                    let trProduks = '';
+                    if (produks.length > 0) {
+                        produks.forEach(prod => {
+                            let tdInputs = '';
 
+                            if (sizes.length > 0) {
+                                sizes.forEach(size => {
+                                    // Cari Stok (Support camelCase idSize & snake_case id_size)
+                                    const foundStok = (prod.stoks || []).find(s => {
+                                        return (s.idSize == size.id) || (s.id_size == size.id);
+                                    });
+
+                                    const jumlah = foundStok ? foundStok.stok : 0;
+
+                                    tdInputs += `
+                                    <td class="p-1">
+                                        <input type="number" min="0" class="form-control form-control-sm text-center fw-bold input-stok"
+                                            value="${jumlah}"
+                                            data-prod="${prod.id}"
+                                            data-size="${size.id}"
+                                            onchange="updateStok(this)">
+                                    </td>`;
+                                });
+                            } else {
+                                tdInputs = `<td class="text-center text-muted">-</td>`;
+                            }
+
+                            trProduks += `
+                            <tr>
+                                <td class="fw-bold ps-3 text-dark">
+                                    ${prod.nama_lengkap}
+                                    <div class="text-muted small" style="font-size:0.7rem;">ID: ${prod.id}</div>
+                                </td>
+                                ${tdInputs}
+                            </tr>`;
+                        });
+                    } else {
+                        trProduks = `<tr><td colspan="${sizes.length + 1}" class="text-center py-4 text-muted fst-italic">Belum ada produk di kategori ini.</td></tr>`;
+                    }
+
+                    // C. Render Card HTML
                     const cardHtml = `
-                    <div class="card" style="background:white; border-radius:10px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom:40px; overflow:hidden; border:1px solid #e2e8f0;">
-
-                        <div style="background:#fff; padding:15px 20px; border-bottom:1px solid #e2e8f0; border-left:5px solid #3b82f6;">
-                            <h4 style="margin:0; font-weight:700; color:#0f172a;">${group.kategori_nama}</h4>
-                        </div>
-
-                        <div style="overflow-x:auto;">
-                            <table style="width:100%; border-collapse:collapse; min-width:800px;">
-                                <thead>
-                                    <tr>
-                                        <th style="padding:15px; width:280px; text-align:left; background:#f8fafc; border-bottom:2px solid #e2e8f0; color:#475569; position:sticky; left:0; z-index:20;">
-                                            Nama Produk
-                                        </th>
-                                        ${headerCols}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${bodyRows}
-                                </tbody>
-                            </table>
-                        </div>
+                <div class="card border-0 shadow-sm mb-5 rounded-3 overflow-hidden">
+                    <div class="card-header bg-white py-3 px-4 border-bottom">
+                        <h5 class="m-0 fw-bold text-primary">${group.kategori_nama}</h5>
                     </div>
-                `;
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3 bg-white" style="min-width: 250px;">Nama Produk</th>
+                                    ${thSizes}
+                                </tr>
+                            </thead>
+                            <tbody>${trProduks}</tbody>
+                        </table>
+                    </div>
+                </div>`;
 
                     container.insertAdjacentHTML('beforeend', cardHtml);
                 });
@@ -128,18 +149,19 @@
             } catch (e) {
                 console.error(e);
                 container.innerHTML = `
-                <div style="padding:20px; background:#fee2e2; color:#991b1b; border-radius:8px; text-align:center;">
-                    <strong>Terjadi Kesalahan!</strong><br>Gagal memuat matrix stok.
+                <div class="alert alert-danger text-center m-4">
+                    <h5 class="fw-bold">Terjadi Kesalahan</h5>
+                    <p>${e.message}</p>
                 </div>`;
             }
         }
 
-        async function updateStok(inputEl, idProduk, idSize) {
-            let val = inputEl.value;
-            if(val === '') val = 0;
+        async function updateStok(el) {
+            const idProduk = el.getAttribute('data-prod');
+            const idSize = el.getAttribute('data-size');
+            const jumlah = el.value;
 
-            const originalColor = inputEl.style.color;
-            inputEl.style.color = 'orange';
+            el.classList.add('border-warning'); // Efek loading kuning
 
             try {
                 const res = await fetch('/api/stoks', {
@@ -149,29 +171,35 @@
                         'Authorization': 'Bearer ' + token,
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({
-                        idProduk: idProduk,
-                        idSize: idSize,
-                        jumlah: parseInt(val)
-                    })
+                    body: JSON.stringify({ idProduk, idSize, jumlah })
                 });
 
-                const json = await res.json();
-
                 if(res.ok) {
-                    inputEl.style.color = '#16a34a';
-                    setTimeout(() => inputEl.style.color = '#334155', 1000);
+                    el.classList.remove('border-warning');
+                    el.classList.add('border-success'); // Sukses hijau
+                    setTimeout(() => el.classList.remove('border-success'), 1000);
                 } else {
-                    console.error("Server Error:", json);
-                    alert('Gagal: ' + (json.message || JSON.stringify(json)));
-                    inputEl.style.color = 'red';
+                    throw new Error('Gagal simpan');
                 }
             } catch(e) {
-                console.error(e);
-                inputEl.style.color = 'red';
-                alert('Terjadi kesalahan koneksi atau server error 500.');
+                el.classList.remove('border-warning');
+                el.classList.add('border-danger'); // Gagal merah
+                alert('Gagal update stok. Cek koneksi.');
             }
         }
-        loadMatrix();
     </script>
+
+    <style>
+        /* Styling tambahan agar input terlihat bersih */
+        .input-stok:focus {
+            background-color: #f0f9ff;
+            border-color: #0d6efd;
+            box-shadow: none;
+        }
+        .input-stok::-webkit-outer-spin-button,
+        .input-stok::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
 @endpush

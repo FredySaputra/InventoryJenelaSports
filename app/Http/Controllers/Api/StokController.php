@@ -3,42 +3,60 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Produk;
-use App\Models\Size;
-use App\Models\Stok;
 use App\Models\Kategori;
+use App\Models\Stok; // Pastikan ini ada
 use App\Http\Requests\UpdateStokRequest;
 use App\Http\Resources\StokResource;
+use Illuminate\Http\Request;
 
 class StokController extends Controller
 {
     public function index()
     {
-        $kategoris = Kategori::orderBy('nama')->get();
-        $dataMatrix = [];
+        try {
+            // Ambil Kategori, Size, dan Produk
+            $kategoris = Kategori::with([
+                'sizes' => function($q) {
+                    $q->orderBy('id', 'asc');
+                },
+                'produks' => function($q) {
+                    $q->with(['bahan', 'stoks']); // Relasi stoks harus ada di Model Produk
+                    $q->orderBy('nama', 'asc');
+                }
+            ])->orderBy('nama', 'asc')->get();
 
-        foreach ($kategoris as $cat) {
-            if (!$cat->prefix_size) continue;
+            $dataMatrix = [];
 
-            $sizes = Size::where('id', 'like', $cat->prefix_size . '%')
-                ->orderBy('id', 'asc')
-                ->get();
+            foreach ($kategoris as $cat) {
+                // KITA HAPUS "CONTINUE" AGAR SEMUA KATEGORI MUNCUL
+                // (Membantu debug kategori mana yang kosong)
 
-            $produks = Produk::with(['stoks'])
-                ->where('idKategori', $cat->id)
-                ->orderBy('nama')
-                ->get();
-
-            if ($produks->count() > 0) {
                 $dataMatrix[] = [
+                    'kategori_id'   => $cat->id,
                     'kategori_nama' => $cat->nama,
-                    'sizes' => $sizes,
-                    'produks' => $produks
+                    'sizes'         => $cat->sizes,
+                    'produks'       => $cat->produks->map(function($prod) {
+
+                        // Handle jika bahan null (agar tidak error)
+                        $namaBahan = $prod->bahan ? $prod->bahan->nama : '';
+                        $warna = $prod->warna ? $prod->warna : '';
+                        $namaLengkap = trim($prod->nama . ' ' . $warna . ' ' . $namaBahan);
+
+                        return [
+                            'id' => $prod->id,
+                            'nama_lengkap' => $namaLengkap,
+                            'stoks' => $prod->stoks // Data stok mentah
+                        ];
+                    })
                 ];
             }
-        }
 
-        return response()->json($dataMatrix);
+            // Pastikan dibungkus 'data'
+            return response()->json(['data' => $dataMatrix]);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Server Error: ' . $e->getMessage()], 500);
+        }
     }
 
     public function update(UpdateStokRequest $request)
@@ -48,7 +66,7 @@ class StokController extends Controller
         $stok = Stok::updateOrCreate(
             [
                 'idProduk' => $validated['idProduk'],
-                'idSize' => $validated['idSize']
+                'idSize'   => $validated['idSize']
             ],
             [
                 'stok' => $validated['jumlah']

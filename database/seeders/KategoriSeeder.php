@@ -15,12 +15,10 @@ class KategoriSeeder extends Seeder
     {
         Kategori::updateOrCreate(['id' => 'KAT-01'], [
             'nama' => 'Baju Beladiri',
-            'prefix_size' => 'BJU'
         ]);
 
         Kategori::updateOrCreate(['id' => 'KAT-02'], [
             'nama' => 'Sabuk',
-            'prefix_size' => 'SBK'
         ]);
     }
 }

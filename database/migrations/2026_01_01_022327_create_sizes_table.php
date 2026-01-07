@@ -16,6 +16,9 @@ return new class extends Migration
             $table->string('tipe',100)->nullable(false);
             $table->decimal('panjang')->nullable(false)->default(0);
             $table->decimal('lebar')->nullable(false)->default(0);
+            $table->string('idKategori')->nullable(false);
+
+            $table->foreign('idKategori')->on('kategoris')->references('id');
         });
     }
 

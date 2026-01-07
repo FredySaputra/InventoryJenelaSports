@@ -1,62 +1,90 @@
 @extends('layouts.admin')
 
-@section('title', 'Data Produk')
-@section('header-title', 'Manajemen Produk')
+@section('title', 'Manajemen Produk')
+@section('header-title', 'Master Data Produk')
 
 @section('content')
 
-    <div id="mainContainer">
-        <div style="text-align:center; padding:50px; color:gray;">
-            <p>Memuat data...</p>
-        </div>
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark m-0">Daftar Produk</h3>
+        <p class="text-muted small">Produk dikelompokkan berdasarkan Kategori. Nama produk otomatis digabung dengan Warna dan Bahan.</p>
     </div>
 
-    <div id="modalProduk" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h3 id="modalTitle">Tambah Produk</h3>
-            <p style="color:gray; margin-top:-10px; font-size:0.9rem;">
-                Kategori: <strong id="labelKategori" style="color:#2563eb;">-</strong>
-            </p>
-
-            <form id="formProduk">
-                <input type="hidden" id="prod_kategori">
-
-                <div class="form-group">
-                    <label>Kode Produk (ID) <span style="color:red">*</span></label>
-                    <input type="text" id="prod_id" required maxlength="100" placeholder="Contoh: KAOS-01">
-                </div>
-
-                <div class="form-group">
-                    <label>Nama Produk <span style="color:red">*</span></label>
-                    <input type="text" id="prod_nama" required placeholder="Contoh: Baju Karate">
-                </div>
-
-                <div class="form-group">
-                    <label>Warna <small>(Opsional)</small></label>
-                    <input type="text" id="prod_warna" placeholder="Contoh: Merah Hitam">
-                </div>
-
-                <div class="form-group">
-                    <label>Bahan <span style="color:red">*</span></label>
-                    <select id="prod_bahan" required style="width: 100%; padding: 8px; margin-top: 5px; background-color: #f8fafc;">
-                        <option value="">-- Pilih Bahan --</option>
-                    </select>
-                    <small style="color:gray; font-size:0.8rem;">
-                        *Pilihan bahan muncul sesuai kategori yang dipilih.
-                    </small>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 15px;">Simpan</button>
-            </form>
+    <div id="mainContainer">
+        <div class="text-center py-5 text-muted">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>Memuat data produk...</p>
         </div>
     </div>
 
 @endsection
 
 @push('scripts')
+
+    <div class="modal fade" id="modalProduk" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalTitle">Tambah Produk</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formProduk">
+
+                        <input type="hidden" id="hidden_kategori_id">
+
+                        <div id="errorAlert" class="alert alert-danger d-none p-2 small"></div>
+
+                        <div class="alert alert-light border mb-3 p-2 small text-muted">
+                            <i class="fas fa-tag me-1"></i> Menambahkan ke Kategori: <strong id="infoKategoriNama" class="text-primary">-</strong>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Kode Produk (ID) <span class="text-danger">*</span></label>
+                            <input type="text" id="prod_id" class="form-control" placeholder="Contoh: RNG-01" required>
+                            <div class="form-text text-muted" style="font-size: 0.75rem;">ID harus unik dan tidak boleh ada spasi.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Nama Produk <span class="text-danger">*</span></label>
+                            <input type="text" id="prod_nama" class="form-control" placeholder="Contoh: Baju Renang" required>
+                            <div class="form-text text-muted" style="font-size: 0.75rem;">Cukup nama inti saja (Tanpa warna/bahan).</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Warna <span class="text-muted fw-normal">(Opsional)</span></label>
+                            <input type="text" id="prod_warna" class="form-control" placeholder="Contoh: Merah, Hitam Polos">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Bahan <span class="text-danger">*</span></label>
+                            <select id="prod_bahan" class="form-select" required>
+                                <option value="">-- Pilih Bahan --</option>
+                            </select>
+                            <div class="form-text text-muted" style="font-size: 0.75rem;">
+                                * Pilihan bahan muncul otomatis sesuai kategori ini.
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary fw-bold" id="btnSimpan">Simpan Produk</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const token = localStorage.getItem('api_token');
+        let isEditMode = false;
+        let currentId = null;
+        let modalInstance;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            modalInstance = new bootstrap.Modal(document.getElementById('modalProduk'));
+            loadData();
+        });
 
         async function loadData() {
             const container = document.getElementById('mainContainer');
@@ -66,151 +94,193 @@
                     headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
                 });
 
-                if (!res.ok) throw new Error(`Server Error: ${res.status}`);
+                if (!res.ok) throw new Error('Gagal memuat data');
 
                 const json = await res.json();
-                const data = json.data ? json.data : json;
+                const groupedData = json.data || [];
 
                 container.innerHTML = '';
 
-                if (!data || data.length === 0) {
-                    container.innerHTML = `<div style="text-align:center; padding:40px; color:gray;">Belum ada data.</div>`;
+                if (groupedData.length === 0) {
+                    container.innerHTML = `<div class="text-center py-5 text-muted">Belum ada Kategori/Produk.</div>`;
                     return;
                 }
 
-                // LOOP KATEGORI
-                data.forEach(cat => {
-                    let tableContent = '';
+                groupedData.forEach(group => {
+                    let rows = '';
 
-                    if (cat.produks && cat.produks.length > 0) {
-                        // Header Tabel (Tanpa Warna)
-                        tableContent += `
-                        <div style="overflow-x:auto;">
-                        <table class="table table-hover" style="width:100%; margin-bottom:0; font-size:0.95rem;">
-                            <thead style="background-color:#f8fafc; border-bottom:2px solid #e2e8f0; color:#64748b; font-size:0.85rem;">
-                                <tr>
-                                    <th style="padding:12px 20px; width:25%;">Kode (ID)</th>
-                                    <th style="padding:12px 20px;">Nama Produk</th>
-                                    <th style="padding:12px 20px; width:15%; text-align:right;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
+                    if(group.produks && group.produks.length > 0) {
+                        group.produks.forEach(prod => {
 
-                        // Isi Tabel
-                        cat.produks.forEach(prod => {
                             const displayName = prod.nama_lengkap || prod.nama;
 
-                            tableContent += `
-                            <tr style="border-bottom:1px solid #f1f5f9;">
-                                <td style="padding:12px 20px; vertical-align:middle;">
-                                    <span style="background:#eff6ff; color:#2563eb; font-weight:600; font-size:0.8rem; padding:4px 8px; border-radius:4px; border:1px solid #dbeafe; white-space:nowrap;">
+                            rows += `
+                            <tr>
+                                <td class="ps-4" style="width: 20%;">
+                                    <span class="badge bg-white text-dark border fw-bold px-2">
                                         ${prod.id}
                                     </span>
                                 </td>
-                                <td style="padding:12px 20px; vertical-align:middle; font-weight:500; color:#334155;">
+                                <td class="fw-bold text-dark">
                                     ${displayName}
                                 </td>
-                                <td style="padding:12px 20px; vertical-align:middle; text-align:right;">
-                                    <button class="btn btn-danger btn-sm" onclick="deleteProduk('${prod.id}')" style="padding:4px 10px; font-size:0.8rem;">
-                                        Hapus
+                                <td class="text-end pe-4" style="width: 20%;">
+                                    <button class="btn btn-warning btn-sm me-1"
+                                        onclick="openModal('edit', '${group.id}', '${group.nama}',
+                                        '${prod.id}', '${prod.nama}', '${prod.warna || ''}', '${prod.bahan_id || ''}')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+
+                                    <button class="btn btn-danger btn-sm" onclick="deleteProduk('${prod.id}')">
+                                        <i class="fas fa-trash-alt"></i> Hapus
                                     </button>
                                 </td>
                             </tr>
-                        `;
+                            `;
                         });
-
-                        tableContent += `</tbody></table></div>`;
                     } else {
-                        tableContent = `<div style="padding:20px; text-align:center; color:#94a3b8; font-style:italic;">Belum ada produk.</div>`;
+                        rows = `<tr><td colspan="3" class="text-center py-4 text-muted fst-italic bg-light">Belum ada produk di kategori ini.</td></tr>`;
                     }
 
-                    // Render Card Kategori
-                    const sectionHtml = `
-                    <div class="card" style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 30px; overflow:hidden; border:1px solid #e2e8f0;">
-                        <div style="background: #f1f5f9; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                            <h3 style="margin:0; font-size:1.1rem; color:#0f172a; font-weight:700;">${cat.nama}</h3>
-                            <button class="btn btn-primary btn-sm" onclick="openAddModal('${cat.id}', '${cat.nama}')">
-                                + Tambah Produk
+                    const cardHtml = `
+                    <div class="card border-0 shadow-sm mb-4 rounded-3 overflow-hidden">
+                        <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="m-0 fw-bold text-dark">${group.nama}</h5>
+                                <small class="text-muted" style="font-size:0.75rem;">ID Kategori: ${group.id}</small>
+                            </div>
+
+                            <button class="btn btn-primary btn-sm fw-bold px-3" onclick="openModal('add', '${group.id}', '${group.nama}')">
+                                <i class="fas fa-plus me-1"></i> Tambah Produk
                             </button>
                         </div>
-                        <div style="background:white;">
-                            ${tableContent}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-secondary small">
+                                    <tr>
+                                        <th class="ps-4 py-2">KODE (ID)</th>
+                                        <th class="py-2">NAMA PRODUK LENGKAP</th>
+                                        <th class="text-end pe-4 py-2">AKSI</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
                         </div>
                     </div>
-                `;
-
-                    container.insertAdjacentHTML('beforeend', sectionHtml);
+                    `;
+                    container.insertAdjacentHTML('beforeend', cardHtml);
                 });
 
             } catch (e) {
                 console.error(e);
-                container.innerHTML = `<div style="text-align:center; color:red; padding:20px;">Gagal memuat data.</div>`;
+                container.innerHTML = `<div class="alert alert-danger text-center m-4">Gagal memuat data.</div>`;
             }
         }
 
-        // --- 2. BUKA MODAL & LOAD BAHAN ---
-        async function openAddModal(kategoriId, kategoriNama) {
+        async function openModal(mode, kategoriId, kategoriNama, idProduk = '', namaProduk = '', warna = '', idBahan = '') {
             document.getElementById('formProduk').reset();
+            document.getElementById('errorAlert').classList.add('d-none');
 
-            // Set Judul & Input Hidden
-            document.getElementById('labelKategori').innerText = kategoriNama;
-            document.getElementById('prod_kategori').value = kategoriId;
-            document.getElementById('modalProduk').style.display = 'flex';
+            document.getElementById('hidden_kategori_id').value = kategoriId;
+            document.getElementById('infoKategoriNama').innerText = kategoriNama;
 
-            // Reset Dropdown Bahan
+            const title = document.getElementById('modalTitle');
+            const inputId = document.getElementById('prod_id');
+            const inputNama = document.getElementById('prod_nama');
+            const inputWarna = document.getElementById('prod_warna');
             const selectBahan = document.getElementById('prod_bahan');
-            selectBahan.innerHTML = '<option value="">Sedang memuat bahan...</option>';
+
+            await loadBahanOptions(kategoriId, idBahan);
+
+            modalInstance.show();
+
+            if (mode === 'edit') {
+                isEditMode = true;
+                currentId = idProduk;
+                title.innerText = 'Edit Produk';
+
+                inputId.value = idProduk;
+                inputId.disabled = true;
+                inputId.classList.add('bg-light');
+
+                inputNama.value = namaProduk;
+                inputWarna.value = warna;
+                selectBahan.value = idBahan;
+            } else {
+                isEditMode = false;
+                currentId = null;
+                title.innerText = 'Tambah Produk';
+
+                inputId.value = '';
+                inputId.disabled = false;
+                inputId.classList.remove('bg-light');
+            }
+        }
+
+        async function loadBahanOptions(kategoriId, selectedBahanId = '') {
+            const selectBahan = document.getElementById('prod_bahan');
+            selectBahan.innerHTML = '<option value="">Memuat bahan...</option>';
             selectBahan.disabled = true;
 
             try {
-                // Panggil API Bahan Filtered
-                // Pastikan Route API ini ada di routes/api.php!
-                const res = await fetch(`/api/bahans/kategori/${kategoriId}`, {
+                const res = await fetch(`/api/bahans`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
 
-                if(!res.ok) throw new Error('Gagal load bahan');
+                if(res.ok) {
+                    const json = await res.json();
+                    const allBahan = json.data || [];
 
-                const json = await res.json();
-                const data = json.data ? json.data : json;
+                    const filteredBahan = allBahan.filter(b => b.idKategori === kategoriId);
 
-                selectBahan.innerHTML = '<option value="">-- Pilih Bahan --</option>';
+                    selectBahan.innerHTML = '<option value="">-- Pilih Bahan --</option>';
 
-                if(data.length > 0) {
-                    data.forEach(bhn => {
-                        selectBahan.innerHTML += `<option value="${bhn.id}">${bhn.nama}</option>`;
-                    });
-                    selectBahan.disabled = false;
+                    if(filteredBahan.length > 0) {
+                        filteredBahan.forEach(bhn => {
+                            const isSelected = bhn.id == selectedBahanId ? 'selected' : '';
+                            selectBahan.innerHTML += `<option value="${bhn.id}" ${isSelected}>${bhn.nama}</option>`;
+                        });
+                        selectBahan.disabled = false;
+                    } else {
+                        selectBahan.innerHTML = '<option value="">Tidak ada bahan di kategori ini. Tambahkan bahan dulu.</option>';
+                    }
                 } else {
-                    selectBahan.innerHTML = '<option value="">Tidak ada data bahan untuk kategori ini</option>';
+                    selectBahan.innerHTML = '<option value="">Gagal mengambil data bahan.</option>';
                 }
-            } catch (e) {
+            } catch(e) {
                 console.error(e);
-                selectBahan.innerHTML = '<option value="">Gagal memuat bahan (Cek API)</option>';
+                selectBahan.innerHTML = '<option value="">Error Server (Bahan)</option>';
             }
         }
 
-        // --- 3. SIMPAN PRODUK KE SERVER ---
         document.getElementById('formProduk').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = document.getElementById('btnSimpan');
+            const alertBox = document.getElementById('errorAlert');
 
-            const payload = {
-                id: document.getElementById('prod_id').value,
+            let payload = {
                 nama: document.getElementById('prod_nama').value,
                 warna: document.getElementById('prod_warna').value,
-                idKategori: document.getElementById('prod_kategori').value, // Dari hidden input
+                idKategori: document.getElementById('hidden_kategori_id').value,
                 idBahan: document.getElementById('prod_bahan').value
             };
 
-            const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerText;
-            btn.innerText = 'Menyimpan...';
-            btn.disabled = true;
+            let url = '/api/produks';
+            let method = 'POST';
+
+            if(isEditMode) {
+                url += '/' + currentId;
+                method = 'PUT';
+            } else {
+                payload.id = document.getElementById('prod_id').value;
+            }
+
+            btn.disabled = true; btn.innerText = 'Menyimpan...';
+            alertBox.classList.add('d-none');
 
             try {
-                const res = await fetch('/api/produks', {
-                    method: 'POST',
+                const res = await fetch(url, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token,
@@ -222,47 +292,51 @@
                 const json = await res.json();
 
                 if(res.ok) {
-                    closeModal();
-                    loadData(); // Refresh tampilan otomatis
-                    alert("Berhasil menyimpan produk!");
+                    modalInstance.hide();
+                    loadData();
                 } else {
-                    // Tampilkan pesan error dari backend jika ada
-                    alert('Gagal: ' + (json.message || JSON.stringify(json)));
+                    let msg = json.message || 'Gagal menyimpan.';
+                    if(json.errors) {
+                        msg += '<br>';
+                        Object.keys(json.errors).forEach(key => {
+                            msg += `- ${json.errors[key][0]}<br>`;
+                        });
+                    }
+                    alertBox.innerHTML = msg;
+                    alertBox.classList.remove('d-none');
                 }
-            } catch (e) {
-                console.error(e);
-                alert("Terjadi kesalahan koneksi.");
+            } catch(e) {
+                alertBox.innerText = 'Error Koneksi.';
+                alertBox.classList.remove('d-none');
             } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
+                btn.disabled = false; btn.innerText = 'Simpan Produk';
             }
         });
 
-        // --- 4. HAPUS PRODUK ---
         async function deleteProduk(id) {
-            if(!confirm('Yakin ingin menghapus produk ini?')) return;
+            if(!confirm('Hapus produk ini?')) return;
 
             try {
-                const res = await fetch(`/api/produks/${id}`, {
+                const res = await fetch('/api/produks/' + id, {
                     method: 'DELETE',
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
                 });
+
+                const json = await res.json();
 
                 if(res.ok) {
                     loadData();
                 } else {
-                    alert('Gagal menghapus produk.');
+                    alert(json.message || 'Terjadi kesalahan saat menghapus data.');
                 }
+
             } catch(e) {
-                alert('Terjadi kesalahan sistem.');
+                console.error(e);
+                alert('Kesalahan koneksi atau server tidak merespon.');
             }
         }
-
-        // Utils Modal
-        function closeModal() { document.getElementById('modalProduk').style.display = 'none'; }
-        window.onclick = function(event) { if (event.target == document.getElementById('modalProduk')) closeModal(); }
-
-        // Jalankan saat halaman dibuka
-        loadData();
     </script>
 @endpush

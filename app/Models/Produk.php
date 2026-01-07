@@ -13,10 +13,7 @@ class Produk extends Model
     protected $keyType = 'string';
     public $incrementing = false;
     public $timestamps = false;
-    protected $fillable = [
-        'nama',
-        'warna'
-    ];
+    protected $guarded = [];
 
     public function user() : BelongsTo
     {
@@ -26,6 +23,11 @@ class Produk extends Model
     public function kategori()
     {
         return $this->belongsTo(Kategori::class, 'idKategori', 'id');
+    }
+
+    public function bahan()
+    {
+        return $this->belongsTo(Bahan::class, 'idBahan', 'id');
     }
 
     public function stoks()

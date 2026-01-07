@@ -4,142 +4,140 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Produk;
+use App\Models\Bahan;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class ProdukSeeder extends Seeder
 {
     public function run(): void
     {
+        $admin = User::first() ?? User::create([
+            'username' => 'admin',
+            'nama' => 'Admin',
+            'role' => 'Admin',
+            'password' => Hash::make('password')
+        ]);
 
-        $user = User::first();
+        $bhnTp = Bahan::updateOrCreate(['id' => 'BHN-TP'], [
+            'nama' => 'TP',
+            'deskripsi' => 'Bahan TP Standar',
+            'idKategori' => 'KAT-01'
+        ]);
 
+        $bhnDrill = Bahan::updateOrCreate(['id' => 'BHN-DRILL'], [
+            'nama' => 'Drill',
+            'deskripsi' => 'Kain Drill',
+            'idKategori' => 'KAT-01'
+        ]);
 
-        if (!$user) {
-            $user = User::create([
-                'nama' => 'Administrator',
-                'username' => 'admin',
-                'password' => bcrypt('password'),
-                'role' => 'Admin',
-                'noTelp' => '08123456789'
-            ]);
-        }
+        $bhnTebal = Bahan::updateOrCreate(['id' => 'BHN-TEBAL'], [
+            'nama' => 'Tebal',
+            'deskripsi' => 'Kain Tebal Premium',
+            'idKategori' => 'KAT-01'
+        ]);
+        $bhnBiasa = Bahan::updateOrCreate(['id' => 'BHN-BIASA'], [
+            'nama' => 'Biasa',
+            'deskripsi' => 'Sabuk Standar',
+            'idKategori' => 'KAT-02'
+        ]);
 
-        $adminId = $user->id;
+        $bhnBordir = Bahan::updateOrCreate(['id' => 'BHN-BORDIR'], [
+            'nama' => 'Tebal Bordir',
+            'deskripsi' => 'Sabuk Tebal dengan Bordir',
+            'idKategori' => 'KAT-02'
+        ]);
 
-        $data = [
+        $bhnSilat = Bahan::updateOrCreate(['id' => 'BHN-SILAT'], [
+            'nama' => 'Silat',
+            'deskripsi' => 'Khusus Silat',
+            'idKategori' => 'KAT-02'
+        ]);
+
+        $produks = [
             [
-                'id' => 'KARATE-TP',
-                'nama' => 'Baju Karate TP',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'KRT-TP', 'nama' => 'Baju Karate', 'warna' => null,
+                'idBahan' => 'BHN-TP', 'idKategori' => 'KAT-01'
             ],
             [
-                'id' => 'KARATE-DRILL',
-                'nama' => 'Baju Karate Drill',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'KRT-DR', 'nama' => 'Baju Karate', 'warna' => null,
+                'idBahan' => 'BHN-DRILL', 'idKategori' => 'KAT-01'
             ],
             [
-                'id' => 'KARATE-TEBAL',
-                'nama' => 'Baju Karate Tebal',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'KRT-TB', 'nama' => 'Baju Karate', 'warna' => null,
+                'idBahan' => 'BHN-TEBAL', 'idKategori' => 'KAT-01'
             ],
-            // --- BAJU TAEKWONDO (PUTIH) ---
+
             [
-                'id' => 'TKD-TP',
-                'nama' => 'Baju Taekwondo TP',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'TKD-TP', 'nama' => 'Baju Taekwondo', 'warna' => null,
+                'idBahan' => 'BHN-TP', 'idKategori' => 'KAT-01'
             ],
             [
-                'id' => 'TKD-DRILL',
-                'nama' => 'Baju Taekwondo Drill',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'TKD-DR', 'nama' => 'Baju Taekwondo', 'warna' => null,
+                'idBahan' => 'BHN-DRILL', 'idKategori' => 'KAT-01'
             ],
             [
-                'id' => 'TKD-TEBAL',
-                'nama' => 'Baju Taekwondo Tebal',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'TKD-TB', 'nama' => 'Baju Taekwondo', 'warna' => null,
+                'idBahan' => 'BHN-TEBAL', 'idKategori' => 'KAT-01'
             ],
-            // --- BAJU TAEKWONDO (MERAH HITAM) ---
+
             [
-                'id' => 'TKD-MH-TP',
-                'nama' => 'Baju Taekwondo Merah Hitam TP',
-                'warna' => 'Merah Hitam',
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'TKD-MH-TP', 'nama' => 'Baju Taekwondo', 'warna' => 'Merah Hitam',
+                'idBahan' => 'BHN-TP', 'idKategori' => 'KAT-01'
             ],
             [
-                'id' => 'TKD-MH-DRILL',
-                'nama' => 'Baju Taekwondo Merah Hitam Drill',
-                'warna' => 'Merah Hitam',
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'TKD-MH-DR', 'nama' => 'Baju Taekwondo', 'warna' => 'Merah Hitam',
+                'idBahan' => 'BHN-DRILL', 'idKategori' => 'KAT-01'
             ],
             [
-                'id' => 'TKD-MH-TEBAL',
-                'nama' => 'Baju Taekwondo Merah Hitam Tebal',
-                'warna' => 'Merah Hitam',
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'TKD-MH-TB', 'nama' => 'Baju Taekwondo', 'warna' => 'Merah Hitam',
+                'idBahan' => 'BHN-TEBAL', 'idKategori' => 'KAT-01'
             ],
-            // --- BAJU SILAT ---
+
+            // 4. Baju Silat (TP, Drill, Tebal)
             [
-                'id' => 'SILAT-TP',
-                'nama' => 'Baju Silat TP',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'SLT-TP', 'nama' => 'Baju Silat', 'warna' => null,
+                'idBahan' => 'BHN-TP', 'idKategori' => 'KAT-01'
             ],
             [
-                'id' => 'SILAT-DRILL',
-                'nama' => 'Baju Silat Drill',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'SLT-DR', 'nama' => 'Baju Silat', 'warna' => null,
+                'idBahan' => 'BHN-DRILL', 'idKategori' => 'KAT-01'
             ],
             [
-                'id' => 'SILAT-TEBAL',
-                'nama' => 'Baju Silat Tebal',
-                'warna' => null,
-                'idKategori' => 'KAT-01',
-                'idUser' => $adminId
+                'id' => 'SLT-TB', 'nama' => 'Baju Silat', 'warna' => null,
+                'idBahan' => 'BHN-TEBAL', 'idKategori' => 'KAT-01'
             ],
-            // --- SABUK ---
+
+            // ---------------------------------------
+            // KATEGORI: SABUK (KAT-02)
+            // ---------------------------------------
+
+            // Sabuk (Biasa, Tebal Bordir, Silat)
             [
-                'id' => 'SABUK-BIASA',
-                'nama' => 'Sabuk Biasa',
-                'warna' => null,
-                'idKategori' => 'KAT-02',
-                'idUser' => $adminId
-            ],
-            [
-                'id' => 'SABUK-BORDIR',
-                'nama' => 'Sabuk Tebal Bordir',
-                'warna' => null,
-                'idKategori' => 'KAT-02',
-                'idUser' => $adminId
+                'id' => 'SBK-BS', 'nama' => 'Sabuk', 'warna' => null,
+                'idBahan' => 'BHN-BIASA', 'idKategori' => 'KAT-02'
             ],
             [
-                'id' => 'SABUK-SILAT',
-                'nama' => 'Sabuk Silat',
-                'warna' => null,
-                'idKategori' => 'KAT-02',
-                'idUser' => $adminId
+                'id' => 'SBK-TB', 'nama' => 'Sabuk', 'warna' => null,
+                'idBahan' => 'BHN-BORDIR', 'idKategori' => 'KAT-02'
+            ],
+            [
+                'id' => 'SBK-SL', 'nama' => 'Sabuk', 'warna' => null,
+                'idBahan' => 'BHN-SILAT', 'idKategori' => 'KAT-02'
             ],
         ];
 
-        foreach ($data as $item) {
-            Produk::updateOrCreate(['id' => $item['id']], $item);
+        foreach ($produks as $p) {
+            Produk::updateOrCreate(
+                ['id' => $p['id']],
+                [
+                    'nama'       => $p['nama'],
+                    'warna'      => $p['warna'],
+                    'idBahan'    => $p['idBahan'],
+                    'idKategori' => $p['idKategori'],
+                    'idUser'     => $admin->id
+                ]
+            );
         }
     }
 }

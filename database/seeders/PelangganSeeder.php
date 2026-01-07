@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Pelanggan;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Pelanggan;
 
 class PelangganSeeder extends Seeder
 {
@@ -13,24 +13,38 @@ class PelangganSeeder extends Seeder
      */
     public function run(): void
     {
-        $collections = [
+        $data = [
             [
-                'id' => 'PLG-001',
-                'nama' => 'PT. Niaga Bersama',
-                'alamat' => 'Jl. Cidodol Raya, RT.005/RW.008, No.84, Kebayoran Lama, Jakarta Selatan',
-                'kontak' => '085219248293'
+                'id'     => 'PLG-001',
+                'nama'   => 'Toko Olahraga Jaya',
+                'alamat' => 'Jl. Ciledug Raya No. 88, Tangerang Selatan',
+                'kontak' => '081234567890',
             ],
             [
-                'id' => 'PLG-002',
-                'nama' => 'PT. Jaya Abadi',
-                'alamat' => 'Jl. Ciledug Raya, RT.002/RW.004, No.80, Ciledug, Tangerang Selatan',
-                'kontak' => '085242332819'
-            ]
+                'id'     => 'PLG-002',
+                'nama'   => 'Dojo Karate Sejahtera',
+                'alamat' => 'Jl. Sudirman No. 45, Jakarta Pusat',
+                'kontak' => '081987654321',
+            ],
+            [
+                'id'     => 'PLG-003',
+                'nama'   => 'SMK Negeri 1 Jakarta',
+                'alamat' => 'Jl. Budi Utomo No. 7, Jakarta Pusat',
+                'kontak' => '0213456789',
+            ],
+            [
+                'id'     => 'PLG-UMUM',
+                'nama'   => 'Pelanggan Umum (Cash)',
+                'alamat' => '-',
+                'kontak' => '-',
+            ],
         ];
 
-        foreach ($collections as $collection) {
-            Pelanggan::create($collection);
+        foreach ($data as $item) {
+            Pelanggan::updateOrCreate(
+                ['id' => $item['id']],
+                $item
+            );
         }
-
     }
 }

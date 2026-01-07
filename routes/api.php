@@ -57,4 +57,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/karyawan/{id}', [KaryawanController::class, 'show']);
     Route::put('/karyawan/{id}', [KaryawanController::class, 'update']);
     Route::delete('/karyawan/{id}', [KaryawanController::class, 'destroy']);
-});
+}
+
+
+);

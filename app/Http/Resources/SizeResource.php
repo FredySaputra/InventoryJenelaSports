@@ -19,6 +19,7 @@ class SizeResource extends JsonResource
             'tipe' => $this->tipe,
             'panjang' => $this->panjang,
             'lebar' => $this->lebar,
+            'idKategori' => $this->idKategori
         ];
     }
 }

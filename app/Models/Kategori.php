@@ -26,4 +26,9 @@ class Kategori extends Model
     {
         return $this->hasMany(Bahan::class, 'idKategori', 'id');
     }
+
+    public function sizes() : HasMany
+    {
+        return $this->hasMany(Size::class, 'idKategori', 'id');
+    }
 }

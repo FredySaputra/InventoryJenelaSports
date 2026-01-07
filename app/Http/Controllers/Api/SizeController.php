@@ -13,82 +13,52 @@ class SizeController extends Controller
 {
     public function index()
     {
-        $kategoris = Kategori::whereNotNull('prefix_size')->orderBy('nama')->get();
+        $kategoris = Kategori::with(['sizes' => function($query) {
+            $query->orderBy('id', 'asc');
+        }])->orderBy('nama', 'asc')->get();
 
-        $groupedData = [];
-        $usedIds = [];
-
-        foreach ($kategoris as $cat) {
-            $sizes = Size::where('id', 'like', $cat->prefix_size . '%')
-                ->orderBy('id', 'asc')
-                ->get();
-
-            foreach($sizes as $s) $usedIds[] = $s->id;
-
-            $groupedData[] = [
+        $groupedData = $kategoris->map(function ($cat) {
+            return [
+                'kategori_id'   => $cat->id,
                 'kategori_nama' => $cat->nama,
-                'prefix' => $cat->prefix_size,
-                'sizes' => SizeResource::collection($sizes)
+                'sizes'         => SizeResource::collection($cat->sizes)
             ];
-        }
+        });
 
-        $otherSizes = Size::whereNotIn('id', $usedIds)->orderBy('id')->get();
-
-        if ($otherSizes->count() > 0) {
-            $groupedData[] = [
-                'kategori_nama' => 'Lain-lain / Tanpa Kategori',
-                'prefix' => '',
-                'sizes' => SizeResource::collection($otherSizes)
-            ];
+        $orphans = Size::whereNull('idKategori')->get();
+        if ($orphans->count() > 0) {
+            $groupedData->push([
+                'kategori_id'   => null,
+                'kategori_nama' => 'Tanpa Kategori / Lain-lain',
+                'sizes'         => SizeResource::collection($orphans)
+            ]);
         }
 
         return response()->json(['data' => $groupedData]);
     }
 
-    public function store(StoreSizeRequest $request)
-    {
+    public function store(StoreSizeRequest $request) {
         $size = Size::create($request->validated());
-
         return new SizeResource($size);
     }
 
-    public function show($id)
-    {
+    public function show($id) {
         $size = Size::find($id);
-
-        if (!$size) {
-            return response()->json(['message' => 'Size tidak ditemukan'], 404);
-        }
-
+        if (!$size) return response()->json(['message' => 'Not Found'], 404);
         return new SizeResource($size);
     }
 
-    public function update(UpdateSizeRequest $request, $id)
-    {
+    public function update(UpdateSizeRequest $request, $id) {
         $size = Size::find($id);
-
-        if (!$size) {
-            return response()->json(['message' => 'Size tidak ditemukan'], 404);
-        }
-
+        if (!$size) return response()->json(['message' => 'Not Found'], 404);
         $size->update($request->validated());
-
         return new SizeResource($size);
     }
 
-    public function destroy($id)
-    {
+    public function destroy($id) {
         $size = Size::find($id);
-
-        if (!$size) {
-            return response()->json(['message' => 'Size tidak ditemukan'], 404);
-        }
-
+        if (!$size) return response()->json(['message' => 'Not Found'], 404);
         $size->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Size berhasil dihapus'
-        ]);
+        return response()->json(['message' => 'Berhasil dihapus']);
     }
 }

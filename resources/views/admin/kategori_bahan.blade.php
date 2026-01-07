@@ -1,133 +1,183 @@
 @extends('layouts.admin')
 
-@section('title', 'Kategori & Bahan - Jelena Sports')
+@section('title', 'Kategori & Bahan')
 @section('header-title', 'Manajemen Kategori & Bahan')
 
 @section('content')
 
-    <div style="display: flex; gap: 20px; align-items: flex-start;">
-
-        <div style="flex: 35%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0; font-size: 1.1rem;">Data Kategori</h3>
-                <button class="btn btn-primary" onclick="openModalKategori()" style="font-size: 0.8rem;">+ Tambah</button>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold m-0 text-dark">Data Kategori</h5>
+                    <button class="btn btn-primary btn-sm fw-bold" onclick="openModalKategori()">
+                        <i class="fas fa-plus"></i> Tambah
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">ID</th>
+                                <th>Nama Kategori</th>
+                                <th class="text-center" style="width: 50px;"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="listKategori">
+                            <tr><td colspan="3" class="text-center py-4 text-muted">Memuat data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                <tr style="background: #f1f5f9; text-align: left;">
-                    <th style="padding: 10px;">ID</th>
-                    <th style="padding: 10px;">Nama</th>
-                    <th style="padding: 10px; width: 30px;"></th>
-                </tr>
-                </thead>
-                <tbody id="listKategori">
-                <tr><td colspan="3" align="center">Memuat...</td></tr>
-                </tbody>
-            </table>
         </div>
 
-        <div style="flex: 65%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-height: 400px;">
+        <div class="col-md-8 mb-4">
+            <div class="card border-0 shadow-sm h-100" style="min-height: 400px;">
 
-            <div id="bahanHeader" style="display:none; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
-                <div>
-                    <small style="color: gray;">Daftar Bahan untuk Kategori:</small>
-                    <h3 style="margin: 0; color: #2563eb;" id="selectedKategoriName"></h3>
+                <div id="emptyStateBahan" class="d-flex flex-column justify-content-center align-items-center h-100 text-center p-5">
+                    <div class="bg-light rounded-circle p-4 mb-3">
+                        <i class="fas fa-hand-point-left fa-3x text-secondary opacity-50"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Pilih Kategori Dahulu</h5>
+                    <p class="text-muted">Klik salah satu kategori di tabel sebelah kiri<br>untuk mengelola bahan.</p>
                 </div>
-                <button class="btn btn-primary" onclick="openModalBahan()" style="font-size: 0.8rem;">+ Tambah Bahan</button>
+
+                <div id="contentBahan" class="d-none">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.75rem;">Bahan untuk Kategori:</small>
+                            <h4 class="fw-bold m-0 text-primary" id="selectedKategoriName">-</h4>
+                        </div>
+                        <button class="btn btn-primary btn-sm fw-bold" onclick="openModalBahan()">
+                            <i class="fas fa-plus me-1"></i> Tambah Bahan
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">ID</th>
+                                    <th>Nama Bahan</th>
+                                    <th>Deskripsi</th>
+                                    <th class="text-end pe-3">Aksi</th>
+                                </tr>
+                                </thead>
+                                <tbody id="listBahan">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-            <div id="emptyStateBahan" style="text-align: center; color: gray; margin-top: 50px;">
-                <p style="font-size: 3rem; margin:0;">👈</p>
-                <p>Pilih salah satu <b>Kategori</b> di sebelah kiri<br>untuk melihat atau menambah bahan.</p>
-            </div>
-
-            <table id="tableBahan" style="width: 100%; border-collapse: collapse; display: none;">
-                <thead>
-                <tr style="background: #f1f5f9; text-align: left;">
-                    <th style="padding: 10px;">ID</th>
-                    <th style="padding: 10px;">Nama Bahan</th>
-                    <th style="padding: 10px;">Deskripsi</th>
-                    <th style="padding: 10px; text-align: right;">Aksi</th>
-                </tr>
-                </thead>
-                <tbody id="listBahan">
-                </tbody>
-            </table>
-        </div>
-
-    </div>
-
-    <div id="modalKategori" class="modal">
-        <div class="modal-content" style="max-width: 400px;">
-            <span class="close" onclick="closeModalKategori()">&times;</span>
-            <h3>Tambah Kategori</h3>
-            <form id="formKategori">
-                <div class="form-group">
-                    <label>Kode Kategori (ID) <span style="color:red">*</span></label>
-                    <input type="text" id="cat_id" placeholder="Cth: KAT-01" required maxlength="100">
-                </div>
-                <div class="form-group">
-                    <label>Nama Kategori <span style="color:red">*</span></label>
-                    <input type="text" id="cat_nama" placeholder="Cth: Baju Beladiri" required maxlength="255">
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%">Simpan</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="modalBahan" class="modal">
-        <div class="modal-content" style="max-width: 400px;">
-            <span class="close" onclick="closeModalBahan()">&times;</span>
-            <h3>Tambah Bahan</h3>
-            <p style="margin-top:0; font-size: 0.9rem; color:gray;">Kategori: <strong id="modalKategoriLabel"></strong></p>
-            <form id="formBahan">
-                <input type="hidden" id="bhn_kategori_id">
-
-                <div class="form-group">
-                    <label>Kode Bahan (ID) <span style="color:red">*</span></label>
-                    <input type="text" id="bhn_id" placeholder="Cth: BHN-01" required maxlength="100">
-                </div>
-                <div class="form-group">
-                    <label>Nama Bahan <span style="color:red">*</span></label>
-                    <input type="text" id="bhn_nama" placeholder="Cth: Drill / Canvas" required maxlength="100">
-                </div>
-                <div class="form-group">
-                    <label>Deskripsi (Opsional)</label>
-                    <textarea id="bhn_deskripsi" rows="3" placeholder="Keterangan bahan..."></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%">Simpan</button>
-            </form>
         </div>
     </div>
 
 @endsection
 
 @push('scripts')
+
+    <div class="modal fade" id="modalKategori" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Tambah Kategori</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formKategori">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Kode Kategori (ID) <span class="text-danger">*</span></label>
+                            <input type="text" id="cat_id" class="form-control" placeholder="Cth: KAT-01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Nama Kategori <span class="text-danger">*</span></label>
+                            <input type="text" id="cat_nama" class="form-control" placeholder="Cth: Baju Beladiri" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Simpan Kategori</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalBahan" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Tambah Bahan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Menambahkan ke kategori: <strong id="modalKategoriLabel" class="text-primary">-</strong></p>
+                    <form id="formBahan">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Kode Bahan (ID) <span class="text-danger">*</span></label>
+                            <input type="text" id="bhn_id" class="form-control" placeholder="Cth: BHN-01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Nama Bahan <span class="text-danger">*</span></label>
+                            <input type="text" id="bhn_nama" class="form-control" placeholder="Cth: Drill / Canvas" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Deskripsi <span class="text-muted fw-normal">(Opsional)</span></label>
+                            <textarea id="bhn_deskripsi" class="form-control" rows="3" placeholder="Keterangan bahan..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Simpan Bahan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const token = localStorage.getItem('api_token');
         let currentKategoriId = null;
         let currentKategoriName = null;
 
+        // Instance Modal Bootstrap
+        let modalKatInstance;
+        let modalBahanInstance;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            modalKatInstance = new bootstrap.Modal(document.getElementById('modalKategori'));
+            modalBahanInstance = new bootstrap.Modal(document.getElementById('modalBahan'));
+            loadKategoris();
+        });
+
+        // --- 1. LOAD KATEGORI ---
         async function loadKategoris() {
             try {
                 const res = await fetch('/api/kategoris', { headers: { 'Authorization': 'Bearer ' + token } });
-                const responseJson = await res.json();
-                const data = responseJson.data;
+                const json = await res.json();
+                const data = json.data;
 
                 const list = document.getElementById('listKategori');
                 list.innerHTML = '';
 
+                if(!data || data.length === 0) {
+                    list.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Belum ada kategori.</td></tr>`;
+                    return;
+                }
+
                 data.forEach(item => {
-                    const bg = (currentKategoriId === item.id) ? '#eff6ff' : 'white';
-                    const border = (currentKategoriId === item.id) ? '2px solid #2563eb' : 'none';
+                    // Logic Active State
+                    const isActive = (currentKategoriId === item.id);
+                    const activeClass = isActive ? 'table-primary border-start border-4 border-primary' : '';
+                    const iconAction = isActive ? '<i class="fas fa-chevron-right text-primary"></i>' : '';
 
                     list.innerHTML += `
-                    <tr style="background:${bg}; cursor:pointer; border-left:${border}; transition:0.2s;" onclick="selectKategori('${item.id}', '${item.nama}')">
-                        <td style="padding: 10px; font-weight:bold;">${item.id}</td>
-                        <td style="padding: 10px;">${item.nama}</td>
-                        <td style="padding: 10px; text-align:center;">
-                            <button class="btn-danger" style="padding: 2px 6px; font-size:0.7rem;" onclick="deleteKategori(event, '${item.id}')">X</button>
+                    <tr class="${activeClass}" style="cursor:pointer; transition:0.2s;" onclick="selectKategori('${item.id}', '${item.nama}')">
+                        <td class="ps-3 fw-bold small text-muted">${item.id}</td>
+                        <td class="fw-bold text-dark">${item.nama}</td>
+                        <td class="text-center">
+                            ${iconAction}
+                            <button class="btn btn-link text-danger p-0 ms-2" style="text-decoration:none;" onclick="deleteKategori(event, '${item.id}')">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -135,22 +185,25 @@
             } catch(e) { console.error("Gagal load kategori", e); }
         }
 
+        // --- 2. PILIH KATEGORI (TAMPILKAN BAHAN) ---
         function selectKategori(id, nama) {
             currentKategoriId = id;
             currentKategoriName = nama;
 
-            document.getElementById('emptyStateBahan').style.display = 'none';
-            document.getElementById('bahanHeader').style.display = 'flex';
-            document.getElementById('tableBahan').style.display = 'table';
+            // Toggle Tampilan Kanan
+            document.getElementById('emptyStateBahan').classList.add('d-none');
+            document.getElementById('contentBahan').classList.remove('d-none');
+
             document.getElementById('selectedKategoriName').innerText = nama;
 
+            // Refresh Kiri (untuk highlight) & Load Kanan
             loadKategoris();
             loadBahans(id);
         }
 
         async function loadBahans(kategoriId) {
             const list = document.getElementById('listBahan');
-            list.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Memuat data...</td></tr>';
+            list.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">Memuat data bahan...</td></tr>';
 
             try {
                 const res = await fetch(`/api/bahans/kategori/${kategoriId}?t=${new Date().getTime()}`, {
@@ -159,36 +212,39 @@
 
                 if (!res.ok) throw new Error("Gagal mengambil data");
 
-                const responseJson = await res.json();
-                const data = responseJson.data;
+                const json = await res.json();
+                const data = json.data;
 
                 list.innerHTML = '';
 
                 if(!data || data.length === 0) {
-                    list.innerHTML = '<tr><td colspan="4" style="text-align:center; color:gray; padding:20px;">Belum ada bahan untuk kategori ini.</td></tr>';
+                    list.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-muted fst-italic">Belum ada bahan di kategori ini.</td></tr>`;
                     return;
                 }
 
                 data.forEach(item => {
-                    const deskripsi = item.deskripsi ? item.deskripsi : '<span style="color:#ccc">-</span>';
+                    const deskripsi = item.deskripsi ? item.deskripsi : '<span class="text-muted">-</span>';
 
                     list.innerHTML += `
-                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                        <td style="padding: 10px;"><b>${item.id}</b></td>
-                        <td style="padding: 10px;">${item.nama}</td>
-                        <td style="padding: 10px; font-size:0.9rem; color:#555;">${deskripsi}</td>
-                        <td style="padding: 10px; text-align: right;">
-                            <button class="btn btn-danger" style="padding: 5px 10px;" onclick="deleteBahan('${item.id}')">Hapus</button>
+                    <tr>
+                        <td class="ps-3"><span class="badge bg-secondary">${item.id}</span></td>
+                        <td class="fw-bold">${item.nama}</td>
+                        <td class="small text-muted">${deskripsi}</td>
+                        <td class="text-end pe-3">
+                            <button class="btn btn-danger btn-sm" onclick="deleteBahan('${item.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
                 });
             } catch(e) {
                 console.error(e);
-                list.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red; padding:20px;">Gagal memuat data. Cek koneksi atau Console.</td></tr>';
+                list.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">Gagal memuat data.</td></tr>';
             }
         }
 
+        // --- 3. PROSES SIMPAN KATEGORI ---
         document.getElementById('formKategori').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
@@ -196,39 +252,42 @@
                 nama: document.getElementById('cat_nama').value
             };
 
-            const res = await fetch('/api/kategoris', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify(payload)
-            });
+            const btn = e.target.querySelector('button[type="submit"]');
+            const oriText = btn.innerText;
+            btn.innerText = 'Menyimpan...'; btn.disabled = true;
 
-            if(res.ok) {
-                closeModalKategori();
-                loadKategoris();
-            } else {
-                const json = await res.json();
-                alert('Gagal: ' + (json.message || 'Cek ID duplikat'));
-            }
+            try {
+                const res = await fetch('/api/kategoris', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(payload)
+                });
+
+                if(res.ok) {
+                    modalKatInstance.hide();
+                    loadKategoris();
+                    alert('Kategori berhasil ditambahkan');
+                } else {
+                    const json = await res.json();
+                    alert('Gagal: ' + (json.message || 'Cek ID duplikat'));
+                }
+            } catch(e) { alert('Error sistem'); }
+            finally { btn.innerText = oriText; btn.disabled = false; }
         });
 
+        // --- 4. PROSES SIMPAN BAHAN ---
         document.getElementById('formBahan').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const idBahan = document.getElementById('bhn_id').value;
-            const namaBahan = document.getElementById('bhn_nama').value;
-            const deskripsiBahan = document.getElementById('bhn_deskripsi').value || '-';
-
             const payload = {
-                id: idBahan,
-                nama: namaBahan,
-                deskripsi: deskripsiBahan,
+                id: document.getElementById('bhn_id').value,
+                nama: document.getElementById('bhn_nama').value,
+                deskripsi: document.getElementById('bhn_deskripsi').value || '-',
                 idKategori: currentKategoriId
             };
 
-            const btnSimpan = e.target.querySelector('button[type="submit"]');
-            const textAsli = btnSimpan.innerText;
-            btnSimpan.innerText = 'Menyimpan...';
-            btnSimpan.disabled = true;
+            const btn = e.target.querySelector('button[type="submit"]');
+            const oriText = btn.innerText;
+            btn.innerText = 'Menyimpan...'; btn.disabled = true;
 
             try {
                 const res = await fetch('/api/bahans', {
@@ -238,65 +297,35 @@
                 });
 
                 if(res.ok) {
-                    closeModalBahan();
-
-                    const list = document.getElementById('listBahan');
-
-                    if(list.innerText.includes('Belum ada') || list.innerText.includes('Memuat') || list.innerText.includes('Gagal')) {
-                        list.innerHTML = '';
-                    }
-
-                    const newRow = `
-                    <tr style="border-bottom: 1px solid #f1f5f9; background-color: #f0fdf4;">
-                        <td style="padding: 10px;"><b>${idBahan}</b></td>
-                        <td style="padding: 10px;">${namaBahan}</td>
-                        <td style="padding: 10px; font-size:0.9rem; color:#555;">${deskripsiBahan}</td>
-                        <td style="padding: 10px; text-align: right;">
-                            <button class="btn btn-danger" style="padding: 5px 10px;" onclick="deleteBahan('${idBahan}')">Hapus</button>
-                        </td>
-                    </tr>
-                `;
-
-                    list.insertAdjacentHTML('beforeend', newRow);
-
+                    modalBahanInstance.hide();
+                    loadBahans(currentKategoriId);
+                    alert('Bahan berhasil ditambahkan');
                 } else {
                     const json = await res.json();
-                    const msg = json.message || 'Cek inputan Anda';
-
-                    if (res.status === 403) {
-                        alert('⛔ AKSES DITOLAK: Hanya Admin yang boleh menambah bahan.');
-                    } else {
-                        alert('Gagal: ' + msg);
-                    }
+                    alert('Gagal: ' + (json.message || 'Error'));
                 }
-            } catch (error) {
-                console.error(error);
-                alert('Terjadi kesalahan sistem');
-            } finally {
-                btnSimpan.innerText = textAsli;
-                btnSimpan.disabled = false;
-            }
+            } catch(e) { alert('Error sistem'); }
+            finally { btn.innerText = oriText; btn.disabled = false; }
         });
 
+        // --- 5. FUNGSI DELETE & MODAL TRIGGER ---
         async function deleteKategori(event, id) {
-            event.stopPropagation();
+            event.stopPropagation(); // Mencegah klik row terpanggil
             if(!confirm('Hapus Kategori? Pastikan kategori ini kosong!')) return;
 
             const res = await fetch(`/api/kategoris/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
 
-            if(!res.ok) {
-                const json = await res.json();
-                alert(json.message);
-                return;
+            if(res.ok) {
+                if(currentKategoriId == id) {
+                    // Reset View Kanan jika yg dihapus adalah yg sedang aktif
+                    document.getElementById('emptyStateBahan').classList.remove('d-none');
+                    document.getElementById('contentBahan').classList.add('d-none');
+                    currentKategoriId = null;
+                }
+                loadKategoris();
+            } else {
+                alert('Gagal menghapus kategori (Mungkin masih ada isinya)');
             }
-
-            if(currentKategoriId == id) {
-                document.getElementById('emptyStateBahan').style.display = 'block';
-                document.getElementById('bahanHeader').style.display = 'none';
-                document.getElementById('tableBahan').style.display = 'none';
-                currentKategoriId = null;
-            }
-            loadKategoris();
         }
 
         async function deleteBahan(id) {
@@ -307,27 +336,18 @@
 
         function openModalKategori() {
             document.getElementById('formKategori').reset();
-            document.getElementById('modalKategori').style.display = 'flex';
+            modalKatInstance.show();
         }
-        function closeModalKategori() { document.getElementById('modalKategori').style.display = 'none'; }
 
         function openModalBahan() {
             if (!currentKategoriId) {
-                alert("⚠️ Eits! Silakan pilih salah satu Kategori di tabel kiri dulu.");
+                alert("Pilih kategori terlebih dahulu.");
                 return;
             }
-
             document.getElementById('formBahan').reset();
             document.getElementById('modalKategoriLabel').innerText = currentKategoriName;
-            document.getElementById('modalBahan').style.display = 'flex';
+            modalBahanInstance.show();
         }
-        function closeModalBahan() { document.getElementById('modalBahan').style.display = 'none'; }
 
-        loadKategoris();
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('modalKategori')) closeModalKategori();
-            if (event.target == document.getElementById('modalBahan')) closeModalBahan();
-        }
     </script>
 @endpush

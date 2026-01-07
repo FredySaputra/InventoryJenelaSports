@@ -25,4 +25,9 @@ class Bahan extends Model
     {
         return $this->belongsTo(Kategori::class,'idKategori','id');
     }
+
+    public function produk() : BelongsTo
+    {
+        return $this->belongsTo(Produk::class,'idProduk','id');
+    }
 }

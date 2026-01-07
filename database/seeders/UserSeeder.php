@@ -14,13 +14,30 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'id' => 'ADM1',
-            'nama' => 'Admin 1',
-            'noTelp' => '085248239843',
-            'username' => 'admin',
-            'password' => Hash::make('rahasia'),
-            'role' => 'Admin'
-        ]);
+        User::updateOrCreate(
+            ['username' => 'admin'],
+            [
+                'id' => 'ADM1',
+                'nama' => 'Admin 1',
+                'noTelp' => '085248239843',
+                'password' => Hash::make('rahasia'),
+                'role' => 'Admin'
+            ]
+        );
+
+        for ($i = 1; $i <= 10; $i++) {
+            $nomorUrut = str_pad($i, 3, '0', STR_PAD_LEFT);
+
+            User::updateOrCreate(
+                ['username' => 'karyawan' . $i],
+                [
+                    'id' => 'KRY-' . $nomorUrut,
+                    'nama' => fake('id_ID')->name(),
+                    'noTelp' => '08' . mt_rand(1111111111, 9999999999),
+                    'password' => Hash::make('rahasia'),
+                    'role' => 'Karyawan'
+                ]
+            );
+        }
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Size extends Model
@@ -16,15 +17,21 @@ class Size extends Model
         'id',
         'tipe',
         'panjang',
-        'lebar'
+        'lebar',
+        'idKategori'
     ];
+
+    public function kategori() : BelongsTo
+    {
+        return $this->belongsTo(Kategori::class, 'idKategori', 'id');
+    }
 
     public function stok() : HasMany
     {
         return $this->hasMany(Stok::class, 'idSize', 'id');
     }
 
-    public function detail_transaksis()
+    public function details() :HasMany
     {
         return $this->hasMany(DetailTransaksi::class, 'idSize', 'id');
     }

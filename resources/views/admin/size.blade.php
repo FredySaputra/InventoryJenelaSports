@@ -5,64 +5,91 @@
 
 @section('content')
 
-    <div style="margin-bottom: 30px;">
-        <h3 style="margin: 0; font-weight: 700; color: #1e293b;">Daftar Ukuran (Size)</h3>
-        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">Data dikelompokkan berdasarkan kategori produk.</p>
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark m-0">Daftar Ukuran (Size)</h3>
+        <p class="text-muted small">Data dikelompokkan berdasarkan Kategori Produk.</p>
     </div>
 
     <div id="mainContainer">
-        <div style="text-align:center; padding:50px; color:gray;">Memuat data...</div>
-    </div>
-
-    <div id="modalSize" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-        <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 100%; max-width: 500px; border-radius: 8px;">
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 id="modalTitle" style="margin: 0;">Tambah Size</h3>
-                <span onclick="closeModal()" style="color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-            </div>
-
-            <form id="formSize">
-                <div id="errorAlert" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.9rem;"></div>
-
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">ID Size <span style="color: red">*</span></label>
-                    <input type="text" id="id_size" class="form-control" placeholder="Contoh: BJU-001" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 5px;">
-                    <small style="color:gray; font-size:0.8rem;">Gunakan prefix kategori, misal: <b>BJU-</b>xxx</small>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Tipe (Label) <span style="color: red">*</span></label>
-                    <input type="text" id="tipe_size" class="form-control" placeholder="Contoh: XL, PT" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 5px;">
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-                    <div style="flex: 1;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Panjang (cm)</label>
-                        <input type="number" step="0.01" id="panjang_size" class="form-control" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 5px;">
-                    </div>
-                    <div style="flex: 1;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Lebar (cm)</label>
-                        <input type="number" step="0.01" id="lebar_size" class="form-control" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 5px;">
-                    </div>
-                </div>
-
-                <div style="text-align: right;">
-                    <button type="button" onclick="closeModal()" class="btn btn-secondary" style="margin-right: 10px;">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+        <div class="text-center py-5 text-muted">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>Memuat data...</p>
         </div>
     </div>
 
 @endsection
 
 @push('scripts')
+
+    <div class="modal fade" id="modalSize" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalTitle">Tambah Size</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formSize">
+
+                        <input type="hidden" id="hidden_kategori_id">
+
+                        <div id="errorAlert" class="alert alert-danger d-none p-2 small"></div>
+
+                        <div class="alert alert-light border mb-3 p-2 small text-muted">
+                            <i class="fas fa-info-circle me-1"></i> Menambahkan ke kategori: <strong id="infoKategoriNama">-</strong>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">ID Size <span class="text-danger">*</span></label>
+
+                            <input type="text" id="id_size" class="form-control" placeholder="Contoh: BJU-XL" required>
+
+                            <div class="form-text text-muted" style="font-size: 0.75rem;">
+                                Ketik ID lengkap secara manual. Harus unik.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Tipe (Label) <span class="text-danger">*</span></label>
+                            <input type="text" id="tipe_size" class="form-control" placeholder="Contoh: XL, L, All Size" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Panjang (cm)</label>
+                                    <input type="number" step="0.01" id="panjang_size" class="form-control" placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Lebar (cm)</label>
+                                    <input type="number" step="0.01" id="lebar_size" class="form-control" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-primary fw-bold" id="btnSimpan">Simpan Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const token = localStorage.getItem('api_token');
         let isEditMode = false;
-        let currentId = null;
+        let currentId = null; // Menyimpan ID Size yang sedang diedit
+        let modalInstance;
 
+        document.addEventListener('DOMContentLoaded', () => {
+            modalInstance = new bootstrap.Modal(document.getElementById('modalSize'));
+            loadData();
+        });
+
+        // 1. LOAD DATA
         async function loadData() {
             const container = document.getElementById('mainContainer');
 
@@ -74,151 +101,154 @@
                 if (!res.ok) throw new Error('Gagal memuat data');
 
                 const json = await res.json();
-                const groups = json.data;
+                const groupedData = json.data || [];
 
                 container.innerHTML = '';
 
-                if (groups.length === 0) {
-                    container.innerHTML = `<div style="text-align:center; padding:40px; background:white; border-radius:8px;">Belum ada data.</div>`;
+                if (groupedData.length === 0) {
+                    container.innerHTML = `<div class="text-center py-5 text-muted">Belum ada Kategori.</div>`;
                     return;
                 }
 
-                groups.forEach(group => {
+                groupedData.forEach(group => {
                     let rows = '';
 
-                    if(group.sizes.length > 0) {
+                    if(group.sizes && group.sizes.length > 0) {
                         group.sizes.forEach(item => {
                             const p = item.panjang ? item.panjang : '-';
                             const l = item.lebar ? item.lebar : '-';
 
                             rows += `
-                            <tr style="border-bottom: 1px solid #f1f5f9;">
-                                <td style="padding: 12px 15px;">
-                                    <span style="background:#eff6ff; color:#2563eb; padding:4px 8px; border-radius:4px; font-weight:600; font-size:0.9rem;">
-                                        ${item.id}
-                                    </span>
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-white text-dark border fw-bold px-2">${item.id}</span>
                                 </td>
-                                <td style="padding: 12px 15px; font-weight:500;">${item.tipe}</td>
-                                <td style="padding: 12px 15px; text-align:center;">${p}</td>
-                                <td style="padding: 12px 15px; text-align:center;">${l}</td>
-                                <td style="padding: 12px 15px; text-align: right;">
-                                    <button class="btn btn-warning btn-sm" onclick="openModal('edit', '${item.id}', '${item.tipe}', '${item.panjang||''}', '${item.lebar||''}')">Edit</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deleteData('${item.id}')" style="margin-left:5px;">Hapus</button>
+                                <td class="fw-bold text-primary">${item.tipe}</td>
+                                <td class="text-center">${p}</td>
+                                <td class="text-center">${l}</td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-light btn-sm border me-1 text-warning"
+                                        onclick="openModal('edit', '${group.kategori_id}', '${group.kategori_nama}', '${item.id}', '${item.tipe}', '${item.panjang||''}', '${item.lebar||''}')">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                    <button class="btn btn-light btn-sm border text-danger" onclick="deleteData('${item.id}')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </td>
                             </tr>
-                        `;
+                            `;
                         });
                     } else {
-                        rows = `<tr><td colspan="5" style="text-align:center; padding:20px; font-style:italic; color:#94a3b8;">Belum ada size di kategori ini.</td></tr>`;
+                        rows = `<tr><td colspan="5" class="text-center py-4 text-muted fst-italic bg-light">Belum ada size di kategori ini.</td></tr>`;
                     }
 
                     const cardHtml = `
-                    <div class="card" style="background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 30px; overflow:hidden; border:1px solid #e2e8f0;">
-                        <div style="background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                            <h4 style="margin:0; color:#0f172a; font-weight:700;">${group.kategori_nama}</h4>
-                            <button class="btn btn-primary btn-sm" onclick="openModal('add', '', '', '', '', '${group.prefix}')">
-                                + Tambah Size
+                    <div class="card border-0 shadow-sm mb-4 rounded-3 overflow-hidden">
+                        <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="m-0 fw-bold text-dark">${group.kategori_nama}</h5>
+                                <small class="text-muted" style="font-size:0.75rem;">ID Kategori: ${group.kategori_id || 'N/A'}</small>
+                            </div>
+
+                            <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="openModal('add', '${group.kategori_id}', '${group.kategori_nama}')">
+                                <i class="fas fa-plus me-1"></i> Tambah Size
                             </button>
                         </div>
-
-                        <div style="overflow-x: auto;">
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <thead style="background-color: #fff; border-bottom: 2px solid #f1f5f9;">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-secondary small">
                                     <tr>
-                                        <th style="padding: 12px 15px; text-align: left; width: 20%; color: #64748b; font-size:0.85rem;">ID Size</th>
-                                        <th style="padding: 12px 15px; text-align: left; color: #64748b; font-size:0.85rem;">Tipe</th>
-                                        <th style="padding: 12px 15px; text-align: center; width: 15%; color: #64748b; font-size:0.85rem;">Panjang</th>
-                                        <th style="padding: 12px 15px; text-align: center; width: 15%; color: #64748b; font-size:0.85rem;">Lebar</th>
-                                        <th style="padding: 12px 15px; text-align: right; width: 15%; color: #64748b; font-size:0.85rem;">Aksi</th>
+                                        <th class="ps-4 py-2">ID SIZE</th>
+                                        <th class="py-2">TIPE</th>
+                                        <th class="text-center py-2">PANJANG</th>
+                                        <th class="text-center py-2">LEBAR</th>
+                                        <th class="text-end pe-4 py-2">AKSI</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    ${rows}
-                                </tbody>
+                                <tbody>${rows}</tbody>
                             </table>
                         </div>
                     </div>
-                `;
-
+                    `;
                     container.insertAdjacentHTML('beforeend', cardHtml);
                 });
 
             } catch (e) {
                 console.error(e);
-                container.innerHTML = `<div style="text-align:center; color:red; padding:20px;">Gagal memuat data: ${e.message}</div>`;
+                container.innerHTML = `<div class="alert alert-danger text-center m-4">Gagal memuat data.</div>`;
             }
         }
 
-        function openModal(mode, id = '', tipe = '', panjang = '', lebar = '', prefix = '') {
-            const modal = document.getElementById('modalSize');
+        // 2. BUKA MODAL
+        function openModal(mode, kategoriId, kategoriNama, idSize = '', tipe = '', panjang = '', lebar = '') {
             const title = document.getElementById('modalTitle');
             const inputId = document.getElementById('id_size');
-            const inputTipe = document.getElementById('tipe_size');
-            const inputPanjang = document.getElementById('panjang_size');
-            const inputLebar = document.getElementById('lebar_size');
             const errorAlert = document.getElementById('errorAlert');
+            const infoKat = document.getElementById('infoKategoriNama');
 
-            errorAlert.style.display = 'none';
-            modal.style.display = 'block';
+            // Reset Form
+            document.getElementById('formSize').reset();
+            errorAlert.classList.add('d-none');
+
+            // Set Kategori (Hidden & Visual)
+            document.getElementById('hidden_kategori_id').value = kategoriId;
+            infoKat.innerText = kategoriNama || 'Tanpa Kategori';
+
+            modalInstance.show();
 
             if (mode === 'edit') {
                 isEditMode = true;
-                currentId = id;
+                currentId = idSize;
                 title.innerText = 'Edit Size';
 
-                inputId.value = id;
-                inputId.disabled = true;
-                inputId.style.backgroundColor = '#f1f5f9';
+                inputId.value = idSize;
+                inputId.disabled = true; // ID tidak bisa diedit
+                inputId.classList.add('bg-light');
 
-                inputTipe.value = tipe;
-                inputPanjang.value = panjang;
-                inputLebar.value = lebar;
+                document.getElementById('tipe_size').value = tipe;
+                document.getElementById('panjang_size').value = panjang;
+                document.getElementById('lebar_size').value = lebar;
             } else {
                 isEditMode = false;
                 currentId = null;
                 title.innerText = 'Tambah Size Baru';
 
-                inputId.value = prefix ? prefix + '-' : '';
+                inputId.value = ''; // User ketik manual full ID
                 inputId.disabled = false;
-                inputId.style.backgroundColor = 'white';
-                inputId.focus();
+                inputId.classList.remove('bg-light');
 
-                inputTipe.value = '';
-                inputPanjang.value = '';
-                inputLebar.value = '';
+                // Opsional: Focus ke input ID
+                setTimeout(() => inputId.focus(), 500);
             }
         }
 
-        function closeModal() {
-            document.getElementById('modalSize').style.display = 'none';
-        }
-
+        // 3. SIMPAN DATA
         document.getElementById('formSize').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const idVal = document.getElementById('id_size').value;
-            const tipeVal = document.getElementById('tipe_size').value;
-            const panjangVal = document.getElementById('panjang_size').value;
-            const lebarVal = document.getElementById('lebar_size').value;
-
-            const btn = e.target.querySelector('button[type="submit"]');
+            const btn = document.getElementById('btnSimpan');
+            const originalText = btn.innerText;
             const errorAlert = document.getElementById('errorAlert');
+
+            // Payload
+            let payload = {
+                id: document.getElementById('id_size').value, // ID Full Manual
+                tipe: document.getElementById('tipe_size').value,
+                panjang: document.getElementById('panjang_size').value || null,
+                lebar: document.getElementById('lebar_size').value || null,
+                idKategori: document.getElementById('hidden_kategori_id').value // Kunci Relasi
+            };
 
             let url = '/api/sizes';
             let method = 'POST';
 
-            let payload = {
-                tipe: tipeVal,
-                panjang: panjangVal === '' ? null : panjangVal,
-                lebar: lebarVal === '' ? null : lebarVal
-            };
-
             if (isEditMode) {
                 url += '/' + currentId;
                 method = 'PUT';
-            } else {
-                payload.id = idVal;
+                delete payload.id; // ID tidak dikirim saat update
             }
+
+            console.log("Mengirim Payload:", payload);
 
             btn.innerText = 'Menyimpan...';
             btn.disabled = true;
@@ -237,58 +267,40 @@
                 const json = await res.json();
 
                 if (!res.ok) {
-                    if (res.status === 400 || res.status === 422) {
-                        let errorMsg = 'Validasi Gagal:<br>';
-                        if (json.errors) {
-                            if (Array.isArray(json.errors)) {
-                                json.errors.forEach(errObj => {
-                                    for (const [key, msgs] of Object.entries(errObj)) {
-                                        errorMsg += `- ${msgs}<br>`;
-                                    }
-                                });
-                            } else {
-                                for (const [key, msgs] of Object.entries(json.errors)) {
-                                    errorMsg += `- ${msgs}<br>`;
-                                }
-                            }
-                        } else {
-                            errorMsg += json.message;
-                        }
-                        errorAlert.innerHTML = errorMsg;
-                        errorAlert.style.display = 'block';
-                    } else {
-                        alert('Error: ' + (json.message || res.status));
+                    let msg = json.message || 'Gagal menyimpan.';
+                    if(json.errors) {
+                        // Tampilkan error validasi
+                        msg += '<br>';
+                        Object.keys(json.errors).forEach(key => {
+                            msg += `- ${json.errors[key][0]}<br>`;
+                        });
                     }
+                    errorAlert.innerHTML = msg;
+                    errorAlert.classList.remove('d-none');
                 } else {
-                    closeModal();
+                    modalInstance.hide();
                     loadData();
                 }
             } catch (e) {
-                alert('Gagal terhubung ke server.');
+                errorAlert.innerText = 'Gagal terhubung ke server (Koneksi Error).';
+                errorAlert.classList.remove('d-none');
             } finally {
-                btn.innerText = 'Simpan';
+                btn.innerText = originalText;
                 btn.disabled = false;
             }
         });
 
+        // 4. HAPUS DATA
         async function deleteData(id) {
-            if (!confirm('Hapus Size ' + id + '?')) return;
+            if (!confirm('Yakin ingin menghapus Size ID: ' + id + '?')) return;
             try {
                 const res = await fetch('/api/sizes/' + id, {
                     method: 'DELETE',
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
-                if (res.ok) loadData();
-                else alert('Gagal hapus.');
-            } catch (e) {
-                alert('Kesalahan koneksi.');
-            }
+                if(res.ok) loadData();
+                else alert('Gagal menghapus data');
+            } catch (e) { alert('Kesalahan koneksi'); }
         }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('modalSize')) closeModal();
-        }
-
-        loadData();
     </script>
 @endpush
