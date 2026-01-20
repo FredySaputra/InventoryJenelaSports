@@ -5,17 +5,68 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 
-// --- PASTIKAN 3 BARIS INI ADA ---
-use App\Http\Resources\KaryawanResource;       // <--- PENTING: Penyebab error 500 jika hilang
+use App\Http\Resources\KaryawanResource;
 use App\Http\Requests\StoreKaryawanRequest;
 use App\Http\Requests\UpdateKaryawanRequest;
-// --------------------------------
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class KaryawanController extends Controller
 {
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'username' => 'required',
+            'password' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Input tidak valid',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $credentials = $request->only('username', 'password');
+
+        if (!$token = auth()->guard('api')->attempt($credentials)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username atau Password salah'
+            ], 401);
+        }
+
+        $user = auth()->guard('api')->user();
+
+        if ($user->role !== 'Karyawan') {
+            auth()->guard('api')->logout();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses Ditolak. Aplikasi ini khusus Karyawan.'
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login Berhasil',
+            'data'    => [
+                'user'  => [
+                    'id'       => $user->id,
+                    'nama'     => $user->nama,
+                    'username' => $user->username,
+                    'role'     => $user->role,
+                ],
+                'token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => auth()->guard('api')->factory()->getTTL() * 60
+            ]
+        ], 200);
+    }
     public function index()
     {
         $karyawan = User::where('role', 'Karyawan')

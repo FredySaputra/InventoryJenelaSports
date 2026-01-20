@@ -11,8 +11,11 @@ use App\Http\Controllers\Api\StokController;
 use App\Http\Controllers\Api\SizeController;
 use App\Http\Controllers\Api\BarangKeluarController;
 use App\Http\Controllers\Api\KaryawanController;
+use App\Http\Controllers\Api\PerintahProduksiController;
+use App\Http\Controllers\AdminProduksiController;
 
 Route::post('/users/login', [UserController::class, 'login']);
+Route::post('/karyawan/login', [KaryawanController::class, 'login']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/kategoris', [KategoriController::class, 'index']);
@@ -48,6 +51,7 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/stoks', [StokController::class, 'index']);
     Route::post('/stoks', [StokController::class, 'update']);
+    Route::get('/stoks/export-pdf', [StokController::class, 'exportPdf']);
 
     Route::get('/barang-keluar', [BarangKeluarController::class, 'index']);
     Route::post('/barang-keluar', [BarangKeluarController::class, 'store']);
@@ -57,6 +61,16 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/karyawan/{id}', [KaryawanController::class, 'show']);
     Route::put('/karyawan/{id}', [KaryawanController::class, 'update']);
     Route::delete('/karyawan/{id}', [KaryawanController::class, 'destroy']);
+
+    Route::get('/perintah-produksi', [PerintahProduksiController::class, 'index']);
+    Route::post('/perintah-produksi', [PerintahProduksiController::class, 'store']);
+    Route::get('/perintah-produksi/{id}', [PerintahProduksiController::class, 'show']);
+    Route::post('/perintah-produksi/{id}/batal', [PerintahProduksiController::class, 'batalkan']);
+
+    Route::get('/progres-produksi/pending', [AdminProduksiController::class, 'getPending']);
+    Route::post('/progres-produksi/{id}/konfirmasi', [AdminProduksiController::class, 'konfirmasiPekerjaan']);
+
+    Route::get('/android/spk-aktif', [PerintahProduksiController::class, 'getSpkActive']);
 }
 
 

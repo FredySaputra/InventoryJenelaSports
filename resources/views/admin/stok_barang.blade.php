@@ -10,9 +10,15 @@
             <h3 class="fw-bold text-dark m-0">Input Stok</h3>
             <p class="text-muted small">Kelola jumlah stok per ukuran/varian.</p>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="loadData()">
-            <i class="fas fa-sync-alt me-1"></i> Refresh Data
-        </button>
+        <div>
+            <button class="btn btn-danger btn-sm me-2" onclick="downloadPdf()">
+                <i class="fas fa-file-pdf me-1"></i> Cetak Laporan PDF
+            </button>
+
+            <button class="btn btn-primary btn-sm" onclick="loadData()">
+                <i class="fas fa-sync-alt me-1"></i> Refresh Data
+            </button>
+        </div>
     </div>
 
     <div id="mainContainer">
@@ -185,6 +191,44 @@
                 el.classList.remove('border-warning');
                 el.classList.add('border-danger'); // Gagal merah
                 alert('Gagal update stok. Cek koneksi.');
+            }
+        }
+
+        async function downloadPdf() {
+            // Ubah tombol jadi loading
+            const btn = document.querySelector('button[onclick="downloadPdf()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/stoks/export-pdf', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token, // Token Auth wajib ada
+                    }
+                });
+
+                if (!res.ok) throw new Error("Gagal download PDF");
+
+                // Proses mengubah response menjadi File Download (Blob)
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Laporan_Stok_Jenela_Sports.pdf"; // Nama file download
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+            } catch (error) {
+                alert("Gagal mencetak PDF. Silakan coba lagi.");
+                console.error(error);
+            } finally {
+                // Kembalikan tombol seperti semula
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
     </script>

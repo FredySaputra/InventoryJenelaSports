@@ -9,6 +9,7 @@ use App\Http\Resources\SizeResource;
 use App\Http\Requests\StoreSizeRequest;
 use App\Http\Requests\UpdateSizeRequest;
 
+
 class SizeController extends Controller
 {
     public function index()

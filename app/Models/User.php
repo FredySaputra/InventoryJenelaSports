@@ -37,4 +37,9 @@ class User extends Authenticatable implements JWTSubject
             'nama' => $this->nama
         ];
     }
+
+    public function riwayatProduksi()
+    {
+        return $this->hasMany(ProgresProduksi::class, 'idKaryawan', 'id');
+    }
 }

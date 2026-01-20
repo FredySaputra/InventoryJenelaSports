@@ -8,6 +8,8 @@ use App\Models\Stok; // Pastikan ini ada
 use App\Http\Requests\UpdateStokRequest;
 use App\Http\Resources\StokResource;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class StokController extends Controller
 {
@@ -74,5 +76,37 @@ class StokController extends Controller
         );
 
         return new StokResource($stok);
+    }
+
+    public function exportPdf()
+    {
+        try {
+            // 1. Ambil Data Tanggal Update Terakhir
+            $lastUpdate = Stok::max('updated_at');
+            $tanggalUpdate = $lastUpdate ? Carbon::parse($lastUpdate)->translatedFormat('d F Y H:i') : '-';
+
+            // 2. Ambil Data Matrix (Sama seperti index, tapi get() langsung untuk View)
+            $kategoris = Kategori::with([
+                'sizes' => function($q) { $q->orderBy('id', 'asc'); },
+                'produks' => function($q) {
+                    $q->with(['bahan', 'stoks']);
+                    $q->orderBy('nama', 'asc');
+                }
+            ])->orderBy('nama', 'asc')->get();
+
+            // 3. Generate PDF
+            $pdf = Pdf::loadView('pdf.laporan_stok', [
+                'kategoris' => $kategoris,
+                'tanggalUpdate' => $tanggalUpdate
+            ]);
+
+            // Set ukuran kertas (A4 Landscape agar muat banyak kolom)
+            $pdf->setPaper('a4', 'landscape');
+
+            return $pdf->download('Laporan_Stok_Jenela_Sports.pdf');
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal cetak PDF: ' . $e->getMessage()], 500);
+        }
     }
 }

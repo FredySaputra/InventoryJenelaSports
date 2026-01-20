@@ -56,6 +56,17 @@
                 <i class="fas fa-shopping-cart fa-fw me-2"></i> Barang Keluar
             </a>
         </li>
+        <li class="menu-header">Produksi</li>
+        <li class="{{ Request::is('produksi/spk') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('produksi.spk') }}">
+                <i class="fas fa-clipboard-list"></i> <span>Perintah Kerja (SPK)</span>
+            </a>
+        </li>
+        <li class="{{ Request::is('produksi/verifikasi') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('produksi.verifikasi') }}">
+                <i class="fas fa-check-double"></i> <span>Verifikasi Hasil</span>
+            </a>
+        </li>
 
     </ul>
 </div>
