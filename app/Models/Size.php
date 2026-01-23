@@ -13,13 +13,7 @@ class Size extends Model
     protected $keyType = 'string';
     public $incrementing = false;
     public $timestamps = false;
-    protected $fillable = [
-        'id',
-        'tipe',
-        'panjang',
-        'lebar',
-        'idKategori'
-    ];
+    protected $guarded = [];
 
     public function kategori() : BelongsTo
     {

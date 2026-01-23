@@ -4,7 +4,7 @@
             <div class="bg-primary text-white rounded p-1 d-flex justify-content-center align-items-center" style="width: 35px; height: 35px;">
                 <i class="fas fa-dumbbell fa-lg"></i>
             </div>
-            <h5 class="m-0 fw-bold text-white" style="letter-spacing: 0.5px;">Jelena Sports</h5>
+            <h5 class="m-0 fw-bold text-white" style="letter-spacing: 0.5px;">Jenela Sports</h5>
         </div>
     </div>
 

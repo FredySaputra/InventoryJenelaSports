@@ -31,21 +31,51 @@ class KategoriController extends Controller
 
     public function destroy($id)
     {
-        if (Bahan::where('idKategori', $id)->exists()) {
+         $kategori = Kategori::find($id);
+
+        if (!$kategori) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal! Kategori ini masih memiliki bahan. Hapus bahannya dulu.'
+                'message' => 'Data kategori tidak ditemukan'
+            ], 404);
+        }
+
+
+        if ($kategori->produks()->count() > 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal! Masih ada Produk di kategori ini. Hapus produknya dulu.'
             ], 400);
         }
 
-        $kategori = Kategori::find($id);
-        if (!$kategori) return response()->json(['message' => 'Tidak ditemukan'], 404);
+        // 3. BERSIH-BERSIH (SOLUSI ERROR 500)
+        // Kita harus menghapus anak-anaknya (Size & Bahan) dulu sebelum Induknya.
+        try {
+            // Hapus semua Size yang terhubung ke kategori ini
+            $kategori->sizes()->delete();
 
-        $kategori->delete();
+            // Hapus semua Bahan yang terhubung ke kategori ini
+            $kategori->bahans()->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Kategori berhasil dihapus'
-        ]);
+            // 4. Baru Hapus Kategorinya
+            $kategori->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Kategori berhasil dihapus (Data Size & Bahan terkait ikut terhapus)'
+            ]);
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Tangkap error jika masih ada tabel lain yang mengunci (misal di masa depan ada tabel baru)
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal database: Data ini terkunci oleh tabel lain.'
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan server.'
+            ], 500);
+        }
     }
 }

@@ -1,38 +1,58 @@
 @extends('layouts.admin')
-@section('title', 'Verifikasi Produksi')
+
+@section('title', 'Verifikasi Hasil Produksi')
 
 @section('content')
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="alert alert-info border-0 shadow-sm d-flex align-items-center">
-                <i class="fas fa-info-circle fa-2x me-3"></i>
-                <div>
-                    <strong>Konfirmasi Hasil Kerja</strong><br>
-                    Data yang disetujui di sini akan otomatis <b>menambah stok barang</b> dan menghitung gaji/progres karyawan.
-                </div>
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold m-0 text-primary">Verifikasi Setoran Karyawan</h5>
+                <small class="text-muted">Validasi hasil kerja sebelum masuk stok.</small>
             </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="loadVerifikasi()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
         </div>
 
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white fw-bold text-danger py-3">
-                    <i class="fas fa-clock me-1"></i> Menunggu Konfirmasi (Pending)
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Waktu Setor</th>
+                        <th>Karyawan</th>
+                        <th>Info Produk</th>
+                        <th class="text-center">Jumlah</th>
+                        <th class="text-end pe-4">Aksi</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tableData">
+                    <tr><td colspan="5" class="text-center py-5">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalTerima" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Verifikasi Terima</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="card-body p-0">
-                    <table class="table table-striped mb-0 align-middle">
-                        <thead>
-                        <tr>
-                            <th class="ps-4">Karyawan</th>
-                            <th>Barang & Size</th>
-                            <th>Jml Setor</th>
-                            <th>Waktu Setor</th>
-                            <th class="text-end pe-4">Aksi</th>
-                        </tr>
-                        </thead>
-                        <tbody id="pendingBody">
-                        <tr><td colspan="5" class="text-center py-4">Tidak ada data pending.</td></tr>
-                        </tbody>
-                    </table>
+                <div class="modal-body">
+                    <p>Karyawan menyetor <b id="lbl_jml_setor">0</b> Pcs.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Jumlah Diterima (Lolos QC)</label>
+                        <input type="number" id="input_diterima" class="form-control fw-bold text-success" min="0">
+                        <small class="text-muted">Jika ada barang reject/rusak, kurangi jumlah ini.</small>
+                    </div>
+                    <input type="hidden" id="hidden_id_progres">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success" onclick="submitTerima()">Simpan & Masukkan Stok</button>
                 </div>
             </div>
         </div>
@@ -41,77 +61,164 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', loadPending);
+        const token = localStorage.getItem('api_token');
 
-        async function loadPending() {
-            const res = await fetchAPI('/api/progres-produksi/pending');
-            const json = await res.json();
-            const tbody = document.getElementById('pendingBody');
-
-            if(json.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Tidak ada data yang perlu diverifikasi.</td></tr>';
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!token) {
+                alert("Sesi habis. Silakan login ulang.");
+                window.location.href = '/login';
                 return;
             }
+            loadVerifikasi();
+        });
 
-            tbody.innerHTML = '';
-            json.data.forEach(item => {
-                // Format Barang: Nama + Warna + Bahan
-                const produk = item.detail.produk;
-                const namaLengkap = `${produk.nama} ${produk.warna || ''}`;
+        async function loadVerifikasi() {
+            const tbody = document.getElementById('tableData');
 
-                tbody.innerHTML += `
-                <tr>
-                    <td class="ps-4 fw-bold">${item.karyawan.nama}</td>
-                    <td>
-                        ${namaLengkap}<br>
-                        <span class="badge bg-light text-dark border">Size: ${item.detail.size.tipe}</span>
-                    </td>
-                    <td class="fs-5 fw-bold text-primary">${item.jumlah_disetor} pcs</td>
-                    <td class="small text-muted">${new Date(item.waktu_setor).toLocaleString()}</td>
-                    <td class="text-end pe-4">
-                        <button class="btn btn-success btn-sm me-1" onclick="approve(${item.id}, ${item.jumlah_disetor})">
-                            <i class="fas fa-check"></i> Terima
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm" onclick="reject(${item.id})">
-                            <i class="fas fa-times"></i> Tolak
-                        </button>
-                    </td>
-                </tr>
-            `;
-            });
-        }
+            // Safety check element
+            if (!tbody) return;
 
-        async function approve(id, jumlahDisetor) {
-            // Tanya admin, berapa yang diterima (QC)
-            const jumlahReal = prompt("Jumlah yang lolos QC (Diterima):", jumlahDisetor);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
 
-            if (jumlahReal === null) return; // Batal
-            if (jumlahReal < 0 || isNaN(jumlahReal)) { alert("Jumlah tidak valid"); return; }
+            try {
+                const res = await fetch('/api/progres-produksi/pending', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const json = await res.json();
 
-            // Panggil API Konfirmasi
-            const payload = {
-                action: 'approve',
-                jumlah_diterima: jumlahReal
-            };
+                // Cek apakah data ada
+                if (json.data && json.data.length > 0) {
+                    tbody.innerHTML = '';
 
-            const res = await fetchAPI(`/api/progres-produksi/${id}/konfirmasi`, 'POST', payload);
-            if(res && res.ok) {
-                alert('Sukses! Stok telah ditambahkan.');
-                loadPending(); // Refresh tabel
+                    json.data.forEach(item => {
+                        // --- PERBAIKAN DI SINI (SESUAI CONTROLLER BARU) ---
+
+                        // 1. Ambil ID Progres
+                        const idProgres = item.id_progres;
+
+                        // 2. Ambil Jumlah (Perhatikan nama key-nya: jumlah_setor)
+                        const jumlah = item.jumlah_setor;
+
+                        // 3. Ambil Nama Karyawan (Controller sudah mengirim string nama, bukan object)
+                        const namaKaryawan = item.karyawan;
+
+                        // 4. Ambil Produk & Size (Controller sudah mengirim string, bukan object)
+                        const namaProduk = item.produk;
+                        const namaSize = item.size;
+
+                        // 5. Format Waktu (Karena Controller kirim raw date string)
+                        // Kita format ulang di JS biar cantik
+                        const dateObj = new Date(item.waktu);
+                        const waktuStr = dateObj.toLocaleDateString('id-ID', {
+                            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                        }).replace('.', ':'); // Ganti pemisah jam
+
+                        // Render HTML
+                        tbody.innerHTML += `
+                        <tr>
+                            <td class="ps-4 small text-muted">${waktuStr}</td>
+                            <td class="fw-bold text-dark">${namaKaryawan}</td>
+                            <td>
+                                <div class="fw-bold">${namaProduk}</div>
+                                <span class="badge bg-light text-dark border">Size: ${namaSize}</span>
+                            </td>
+                            <td class="text-center fw-bold text-primary" style="font-size: 1.2em;">${jumlah}</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-danger btn-sm me-1" onclick="reject('${idProgres}')" title="Tolak">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <button class="btn btn-success btn-sm" onclick="openModalTerima('${idProgres}', ${jumlah})" title="Terima">
+                                    <i class="fas fa-check"></i> Proses
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    });
+                } else {
+                    tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <p class="text-muted m-0">Tidak ada setoran yang menunggu verifikasi.</p>
+                        </td>
+                    </tr>`;
+                }
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Gagal memuat data.</td></tr>`;
             }
         }
 
+        function openModalTerima(id, jumlah) {
+            document.getElementById('hidden_id_progres').value = id;
+            document.getElementById('lbl_jml_setor').innerText = jumlah;
+            document.getElementById('input_diterima').value = jumlah;
+            new bootstrap.Modal(document.getElementById('modalTerima')).show();
+        }
+
+        async function submitTerima() {
+            const id = document.getElementById('hidden_id_progres').value;
+            const jumlahDiterima = document.getElementById('input_diterima').value;
+
+            if (jumlahDiterima < 0 || jumlahDiterima === '') {
+                alert("Jumlah tidak valid!"); return;
+            }
+
+            try {
+                const res = await fetch(`/api/progres-produksi/${id}/konfirmasi`, {
+                    body: JSON.stringify({
+                        action: 'approve',
+                        jumlah_diterima: jumlahDiterima
+                    })
+                });
+
+                const json = await res.json();
+
+                if (res.ok) {
+                    // Tutup Modal Dulu
+                    const modalEl = document.getElementById('modalTerima');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+
+                    alert("Berhasil! Stok bertambah.");
+                    loadVerifikasi(); // <--- WAJIB: Refresh tabel
+                } else {
+                    alert("Gagal: " + (json.message || "Error server"));
+                    loadVerifikasi(); // Refresh juga untuk keamanan
+                }
+            } catch (e) {
+                alert("Error koneksi");
+            }
+        }
+
+        // --- LOGIKA TOLAK ---
         async function reject(id) {
-            if(!confirm("Yakin tolak laporan ini?")) return;
+            if(!confirm('Yakin ingin menolak setoran ini? Stok TIDAK akan bertambah.')) return;
 
-            const payload = {
-                action: 'reject',
-                jumlah_diterima: 0
-            };
+            try {
+                const res = await fetch(`/api/progres-produksi/${id}/konfirmasi`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        action: 'reject',
+                        jumlah_diterima: 0
+                    })
+                });
 
-            const res = await fetchAPI(`/api/progres-produksi/${id}/konfirmasi`, 'POST', payload);
-            if(res && res.ok) {
-                loadPending();
+                // --- TAMBAHAN PENTING ---
+                const json = await res.json(); // Baca response dulu
+
+                if (res.ok) {
+                    alert("Laporan berhasil ditolak.");
+                    loadVerifikasi(); // <--- WAJIB: Refresh tabel agar data hilang dari layar
+                } else {
+                    alert("Gagal: " + json.message);
+                    loadVerifikasi(); // Refresh juga kalau gagal, biar data status terbaru muncul
+                }
+            } catch (e) {
+                alert("Error koneksi");
             }
         }
     </script>

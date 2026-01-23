@@ -71,6 +71,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/progres-produksi/{id}/konfirmasi', [AdminProduksiController::class, 'konfirmasiPekerjaan']);
 
     Route::get('/android/spk-aktif', [PerintahProduksiController::class, 'getSpkActive']);
+    Route::post('/android/update-progress', [PerintahProduksiController::class, 'storeProgress']);
 }
 
 

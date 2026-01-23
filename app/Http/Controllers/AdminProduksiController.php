@@ -9,72 +9,82 @@ use Illuminate\Support\Facades\DB;
 
 class AdminProduksiController extends Controller
 {
-    public function konfirmasiPekerjaan(Request $request, $idProgres) {
-        // Admin menentukan berapa yang lolos QC (Quality Control)
-        $request->validate([
-            'jumlah_diterima' => 'required|integer|min:0', // Berapa yang bagus?
-            'action' => 'required|in:approve,reject'
-        ]);
+    public function konfirmasiPekerjaan(Request $request, $idProgres)
+    {
+        // 1. Cari data dulu
+        $progres = ProgresProduksi::with('detail')->find($idProgres);
 
-        return DB::transaction(function () use ($request, $idProgres) {
-            $progres = ProgresProduksi::with('detail')->findOrFail($idProgres);
+        if (!$progres) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
 
-            if ($progres->status !== 'Menunggu') {
-                return response()->json(['message' => 'Data ini sudah diproses sebelumnya!'], 400);
-            }
+        // 2. Cek Status (Gunakan strtolower agar tidak sensitif huruf besar/kecil)
+        // Trim untuk membuang spasi yang tidak sengaja terbawa di database
+        if (trim(strtolower($progres->status)) !== 'menunggu') {
+            return response()->json([
+                'message' => 'Gagal: Data ini statusnya sudah bukan Menunggu (Status: ' . $progres->status . ')'
+            ], 400);
+        }
 
+        return DB::transaction(function () use ($request, $progres) {
+
+            // --- SKENARIO 1: TOLAK (REJECT) ---
             if ($request->action === 'reject') {
-                $progres->update(['status' => 'Ditolak']);
-                return response()->json(['message' => 'Pekerjaan ditolak.']);
+                // Langsung update status jadi Ditolak tanpa validasi jumlah
+                $progres->update([
+                    'status' => 'Ditolak',
+                    'waktu_konfirmasi' => now()
+                ]);
+                return response()->json(['message' => 'Laporan berhasil ditolak.']);
             }
 
-            // JIKA DI-APPROVE (DISINI LOGIKA STOK NYA)
+            // --- SKENARIO 2: TERIMA (APPROVE) ---
+            // Baru kita validasi jumlah jika aksinya approve
+            $request->validate([
+                'jumlah_diterima' => 'required|integer|min:0'
+            ]);
 
-            // 1. Update Status Progres
+            // Update Status Progres
             $progres->update([
                 'status' => 'Disetujui',
-                'jumlah_diterima' => $request->jumlah_diterima, // Misal input 20, tapi yg bagus 19
+                'jumlah_diterima' => $request->jumlah_diterima,
                 'waktu_konfirmasi' => now()
             ]);
 
-            // 2. Tambahkan ke Tabel STOK (Increment)
-            // Cari stok berdasarkan Produk & Size dari detail job
+            // Tambahkan ke Tabel STOK (Increment)
             $stok = Stok::firstOrCreate(
                 [
-                    'idProduk' => $progres->detail->idProduk,
-                    'idSize'   => $progres->detail->idSize
+                    'idProduk' => $progres->detail->idProduk, // ID String (KRT-TB)
+                    'idSize'   => $progres->detail->idSize    // ID String (BJU-S)
                 ],
                 ['stok' => 0]
             );
 
-            // Tambah stok real
             $stok->increment('stok', $request->jumlah_diterima);
 
-            // 3. Update 'jumlah_selesai' di tabel Detail Produksi (Untuk tracking target SPK)
+            // Update target SPK
             $progres->detail->increment('jumlah_selesai', $request->jumlah_diterima);
 
-            $detailCurrent = $progres->detail; // Detail yg sedang diproses
-            $spkInduk = $detailCurrent->perintahProduksi; // Header SPK
+            // Cek apakah SPK Selesai (Logic update status SPK)
+            $detailCurrent = $progres->detail;
+            $spkInduk = $detailCurrent->perintahProduksi;
 
-            // 2. Cek apakah SEMUA detail di SPK ini sudah memenuhi target?
-            // Kita load ulang semua details milik SPK ini untuk pengecekan
-            $allDetails = $spkInduk->details()->get();
-
-            $isAllDone = true;
-            foreach($allDetails as $det) {
-                if ($det->jumlah_selesai < $det->jumlah_target) {
-                    $isAllDone = false;
-                    break; // Ada satu yg belum kelar, berarti SPK belum Selesai
+            if ($spkInduk) {
+                $allDetails = $spkInduk->details()->get();
+                $isAllDone = true;
+                foreach($allDetails as $det) {
+                    if ($det->jumlah_selesai < $det->jumlah_target) {
+                        $isAllDone = false;
+                        break;
+                    }
                 }
-            }
 
-            // 3. Jika Semua Done, Update Status SPK jadi 'Selesai'
-            if ($isAllDone) {
-                $spkInduk->update(['status' => 'Selesai']);
-            } else {
-                // Jika ada progres masuk, pastikan statusnya 'Proses' (bukan Pending)
-                if ($spkInduk->status === 'Pending') {
-                    $spkInduk->update(['status' => 'Proses']);
+                if ($isAllDone) {
+                    $spkInduk->update(['status' => 'Selesai']);
+                } else {
+                    if ($spkInduk->status === 'Pending') {
+                        $spkInduk->update(['status' => 'Proses']);
+                    }
                 }
             }
 
@@ -85,12 +95,24 @@ class AdminProduksiController extends Controller
     // Tambahkan method ini di AdminProduksiController yang sudah Anda buat sebelumnya
     public function getPending()
     {
-        // Ambil progres yang statusnya 'Menunggu'
         $data = \App\Models\ProgresProduksi::with(['karyawan', 'detail.produk', 'detail.size'])
-            ->where('status', 'Menunggu')
+            ->where('status', 'Menunggu') // <--- WAJIB ADA! Agar data Ditolak/Disetujui hilang dari tabel.
             ->orderBy('waktu_setor', 'asc')
             ->get();
 
-        return response()->json(['data' => $data]);
+        $formatted = $data->map(function($item) {
+            return [
+                'id_progres'   => $item->id,
+                'waktu'        => $item->waktu_setor,
+                'karyawan'     => $item->karyawan->nama ?? 'Unknown',
+                'no_spk'       => $item->detail->perintahProduksi->id ?? '-',
+                'produk'       => $item->detail->produk->nama ?? '-', // Kalau ini masih -, lakukan Perbaikan 2
+                'size'         => $item->detail->size->tipe ?? '-',
+                'jumlah_setor' => $item->jumlah_disetor,
+                'id_detail'    => $item->idDetailProduksi
+            ];
+        });
+
+        return response()->json(['data' => $formatted]);
     }
 }

@@ -9,12 +9,8 @@ class Stok extends Model
 {
     protected $table = 'stoks';
 
-    public $timestamps = true;
-    protected $fillable = [
-        'idProduk',
-        'idSize',
-        'stok'
-    ];
+    public $timestamps = false;
+    protected $guarded = [];
 
     public function produk() : BelongsTo
     {

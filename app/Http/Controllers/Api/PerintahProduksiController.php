@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PerintahProduksi;
 use App\Models\DetailPerintahProduksi;
+use App\Models\ProgresProduksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -55,31 +56,50 @@ class PerintahProduksiController extends Controller
         });
     }
 
-    // Di dalam class PerintahProduksiController
-
     public function getSpkActive()
     {
-        // Ambil SPK yang statusnya "Proses" saja (yang "Selesai" tidak perlu muncul di HP)
-        $data = PerintahProduksi::with(['details.produk', 'details.size'])
+        $data = PerintahProduksi::with(['pelanggan', 'details.produk.bahan', 'details.size', 'details.progres'])
             ->whereIn('status', ['Pending', 'Proses'])
-            ->orderBy('tanggal_target', 'asc') // Urutkan deadline terdekat
+            ->orderBy('tanggal_target', 'asc')
             ->get();
 
-        // Kita rapikan datanya agar Android mudah membacanya
         $formatted = $data->map(function($spk) {
             return [
                 'id_spk' => $spk->id,
                 'target_date' => $spk->tanggal_target,
+                'pelanggan' => $spk->pelanggan ? $spk->pelanggan->nama : 'Stok Gudang',
                 'catatan' => $spk->catatan,
-                // List Barang dalam SPK tersebut
+
                 'items' => $spk->details->map(function($detail) {
+                    $resmiSelesai = $detail->progres
+                        ->where('status', 'Disetujui')
+                        ->sum('jumlah_diterima');
+
+                    $sedangOtw = $detail->progres
+                        ->where('status', 'Menunggu')
+                        ->sum('jumlah_disetor');
+
+                    $totalProgress = $resmiSelesai + $sedangOtw;
+
+                    $sisaQty = $detail->jumlah_target - $totalProgress;
+                    if ($sisaQty < 0) $sisaQty = 0;
+
+                    $labelSisa = ($sisaQty === 0) ? "Selesai" : "{$sisaQty} Pcs";
+
+                    $namaBahan = $detail->produk->bahan ? $detail->produk->bahan->nama : '';
+                    $warna = $detail->produk->warna ? $detail->produk->warna : '';
+                    $namaProduk = trim($detail->produk->nama . ' ' . $warna . ' ' . $namaBahan);
+
                     return [
-                        'id_detail' => $detail->id, // PENTING: Ini ID untuk setor kerjaan nanti
-                        'produk' => $detail->produk->nama . ' ' . ($detail->produk->warna ?? ''),
-                        'size' => $detail->size->tipe, // Pastikan nama kolom size benar
+                        'id_detail' => $detail->id,
+                        'produk' => $namaProduk,
+                        'size' => $detail->size->tipe,
                         'target' => $detail->jumlah_target,
-                        'selesai' => $detail->jumlah_selesai,
-                        'sisa' => $detail->jumlah_target - $detail->jumlah_selesai
+
+                        'progress_total' => $totalProgress,
+                        'sisa_qty' => $sisaQty,
+
+                        'sisa_label' => $labelSisa
                     ];
                 })
             ];
@@ -115,5 +135,49 @@ class PerintahProduksiController extends Controller
         $spk->update(['status' => 'Dibatalkan']);
 
         return response()->json(['message' => 'SPK Berhasil Dibatalkan']);
+    }
+
+    public function storeProgress(Request $request)
+    {
+        // 1. Validasi Input
+        $validator = \Validator::make($request->all(), [
+            'id_detail' => 'required|exists:detail_perintah_produksis,id', // ID Barang yg dikerjakan
+            'jumlah'    => 'required|integer|min:1', // Jumlah yg disetor
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first()
+            ], 400);
+        }
+
+        try {
+            // 2. Ambil User yang sedang Login (Karyawan)
+            $user = auth()->user();
+
+            // 3. Simpan ke Tabel Progres Produksi
+            // Sesuai struktur tabel di gambar database Anda
+            $progres = ProgresProduksi::create([
+                'idDetailProduksi' => $request->id_detail,
+                'idKaryawan'       => $user->id,
+                'jumlah_disetor'   => $request->jumlah,
+                'jumlah_diterima'  => 0, // Default 0 sebelum dicek admin
+                'status'           => 'Menunggu', // PENTING: Status awal Menunggu
+                'waktu_setor'      => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan berhasil dikirim! Menunggu verifikasi admin.',
+                'data'    => $progres
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
