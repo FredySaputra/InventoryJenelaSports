@@ -72,6 +72,9 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('/android/spk-aktif', [PerintahProduksiController::class, 'getSpkActive']);
     Route::post('/android/update-progress', [PerintahProduksiController::class, 'storeProgress']);
+    Route::post('/android/barang-masuk', [PerintahProduksiController::class, 'storeDirectInput']);
+    Route::get('/android/list-produk', [PerintahProduksiController::class, 'getProdukForAndroid']);
+    Route::get('/android/list-size/{idProduk}', [PerintahProduksiController::class, 'getSizeByProduk']);
 }
 
 

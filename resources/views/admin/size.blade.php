@@ -293,14 +293,26 @@
         // 4. HAPUS DATA
         async function deleteData(id) {
             if (!confirm('Yakin ingin menghapus Size ID: ' + id + '?')) return;
+
             try {
                 const res = await fetch('/api/sizes/' + id, {
                     method: 'DELETE',
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json' // Penting agar return JSON
+                    }
                 });
-                if(res.ok) loadData();
-                else alert('Gagal menghapus data');
-            } catch (e) { alert('Kesalahan koneksi'); }
+
+                const json = await res.json();
+
+                if(res.ok) {
+                    loadData();
+                } else {
+                    alert(json.message || 'Gagal menghapus data');
+                }
+            } catch (e) {
+                alert('Kesalahan koneksi');
+            }
         }
     </script>
 @endpush

@@ -57,9 +57,28 @@ class SizeController extends Controller
     }
 
     public function destroy($id) {
-        $size = Size::find($id);
-        if (!$size) return response()->json(['message' => 'Not Found'], 404);
-        $size->delete();
-        return response()->json(['message' => 'Berhasil dihapus']);
+        try {
+            $size = Size::find($id);
+            if (!$size) {
+                return response()->json(['message' => 'Data tidak ditemukan'], 404);
+            }
+
+            // Coba hapus
+            $size->delete();
+
+            return response()->json(['message' => 'Berhasil dihapus']);
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Error 23000 adalah kode SQL untuk Integrity Constraint Violation (Data terpaut)
+            if ($e->getCode() == "23000") {
+                return response()->json([
+                    'message' => 'Gagal menghapus: Size ini sedang digunakan di Data Stok atau SPK. Hapus dulu data yang terkait.'
+                ], 409); // 409 Conflict
+            }
+
+            return response()->json(['message' => 'Server Error: ' . $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Terjadi kesalahan sistem.'], 500);
+        }
     }
 }

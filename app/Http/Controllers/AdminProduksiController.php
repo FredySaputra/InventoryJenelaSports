@@ -95,18 +95,36 @@ class AdminProduksiController extends Controller
     // Tambahkan method ini di AdminProduksiController yang sudah Anda buat sebelumnya
     public function getPending()
     {
-        $data = \App\Models\ProgresProduksi::with(['karyawan', 'detail.produk', 'detail.size'])
-            ->where('status', 'Menunggu') // <--- WAJIB ADA! Agar data Ditolak/Disetujui hilang dari tabel.
+        // 1. Load relasi 'bahan' juga lewat detail.produk.bahan
+        $data = ProgresProduksi::with([
+            'karyawan',
+            'detail.produk.bahan', // <--- TAMBAHAN PENTING
+            'detail.size'
+        ])
+            ->where('status', 'Menunggu')
             ->orderBy('waktu_setor', 'asc')
             ->get();
 
         $formatted = $data->map(function($item) {
+
+            // Ambil object produk (jaga-jaga null)
+            $produk = $item->detail->produk ?? null;
+
+            // LOGIKA PEMBUATAN NAMA LENGKAP (SAMA SEPERTI STOK)
+            $namaLengkap = '-';
+            if ($produk) {
+                $namaBahan = $produk->bahan ? $produk->bahan->nama : '';
+                $warna = $produk->warna ? $produk->warna : '';
+                // Gabung: Nama + Warna + Bahan
+                $namaLengkap = trim($produk->nama . ' ' . $warna . ' ' . $namaBahan);
+            }
+
             return [
                 'id_progres'   => $item->id,
                 'waktu'        => $item->waktu_setor,
                 'karyawan'     => $item->karyawan->nama ?? 'Unknown',
                 'no_spk'       => $item->detail->perintahProduksi->id ?? '-',
-                'produk'       => $item->detail->produk->nama ?? '-', // Kalau ini masih -, lakukan Perbaikan 2
+                'produk'       => $namaLengkap, // <--- Pakai variabel yang sudah digabung tadi
                 'size'         => $item->detail->size->tipe ?? '-',
                 'jumlah_setor' => $item->jumlah_disetor,
                 'id_detail'    => $item->idDetailProduksi

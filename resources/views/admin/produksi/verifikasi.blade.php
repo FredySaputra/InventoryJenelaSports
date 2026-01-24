@@ -163,15 +163,35 @@
                 alert("Jumlah tidak valid!"); return;
             }
 
+            // Efek Loading pada tombol (Optional, biar user tau sedang proses)
+            const btnSimpan = document.querySelector('#modalTerima .btn-success');
+            const textAsli = btnSimpan.innerText;
+            btnSimpan.innerText = 'Menyimpan...';
+            btnSimpan.disabled = true;
+
             try {
                 const res = await fetch(`/api/progres-produksi/${id}/konfirmasi`, {
+                    method: 'POST', // <--- WAJIB ADA
+                    headers: {
+                        'Content-Type': 'application/json', // <--- WAJIB ADA
+                        'Authorization': 'Bearer ' + token  // <--- WAJIB ADA
+                    },
                     body: JSON.stringify({
                         action: 'approve',
                         jumlah_diterima: jumlahDiterima
                     })
                 });
 
-                const json = await res.json();
+                // Cek response teks dulu untuk jaga-jaga kalau errornya HTML (bukan JSON)
+                const textResponse = await res.text();
+
+                let json;
+                try {
+                    json = JSON.parse(textResponse);
+                } catch (err) {
+                    console.error("Server Error HTML:", textResponse);
+                    throw new Error("Terjadi kesalahan di server (Cek Console).");
+                }
 
                 if (res.ok) {
                     // Tutup Modal Dulu
@@ -180,13 +200,18 @@
                     modal.hide();
 
                     alert("Berhasil! Stok bertambah.");
-                    loadVerifikasi(); // <--- WAJIB: Refresh tabel
+                    loadVerifikasi(); // Refresh tabel
                 } else {
                     alert("Gagal: " + (json.message || "Error server"));
-                    loadVerifikasi(); // Refresh juga untuk keamanan
+                    // Jika gagal, tetap refresh agar data terbaru (misal sudah diproses orang lain) muncul
+                    loadVerifikasi();
                 }
             } catch (e) {
-                alert("Error koneksi");
+                alert("Error: " + e.message);
+            } finally {
+                // Kembalikan tombol seperti semula
+                btnSimpan.innerText = textAsli;
+                btnSimpan.disabled = false;
             }
         }
 

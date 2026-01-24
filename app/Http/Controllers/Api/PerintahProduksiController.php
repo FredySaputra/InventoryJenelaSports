@@ -180,4 +180,98 @@ class PerintahProduksiController extends Controller
             ], 500);
         }
     }
+
+    public function storeDirectInput(Request $request)
+    {
+        // 1. Validasi Input dari Android
+        $validator = \Validator::make($request->all(), [
+            'id_produk' => 'required|exists:produks,id',
+            'id_size'   => 'required|exists:sizes,id',
+            'jumlah'    => 'required|integer|min:1',
+            'tanggal'   => 'required|date', // Tanggal dari inputan Android
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 400);
+        }
+
+        return DB::transaction(function () use ($request) {
+            $user = auth()->user();
+            $idSpkKhusus = 'SPK-DIRECT';
+
+            $detail = \App\Models\DetailPerintahProduksi::firstOrCreate(
+                [
+                    'idPerintahProduksi' => $idSpkKhusus,
+                    'idProduk'           => $request->id_produk,
+                    'idSize'             => $request->id_size,
+                ],
+                [
+                    'jumlah_target'  => 0, // Target 0 karena ini bukan target kerjaan
+                    'jumlah_selesai' => 0
+                ]
+            );
+
+            // 3. Simpan ke Progres Produksi (Agar masuk ke Verifikasi Admin)
+            $progres = \App\Models\ProgresProduksi::create([
+                'idDetailProduksi' => $detail->id,
+                'idKaryawan'       => $user->id,
+                'jumlah_disetor'   => $request->jumlah,
+                'jumlah_diterima'  => 0,
+                'status'           => 'Menunggu', // PENTING: Agar muncul di Admin
+                'waktu_setor'      => $request->tanggal . ' ' . now()->format('H:i:s'), // Gabung tanggal input + jam sekarang
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan berhasil dikirim ke Admin untuk diverifikasi!',
+                'data'    => $progres
+            ]);
+        });
+    }
+
+    // Endpoint untuk List Produk di Android
+    public function getProdukForAndroid()
+    {
+        // Ambil produk beserta relasi bahannya
+        $produks = \App\Models\Produk::with('bahan')->get();
+
+        // Format datanya agar nama sudah digabung
+        $formatted = $produks->map(function($item) {
+            $namaBahan = $item->bahan ? $item->bahan->nama : ''; // Handle jika bahan null
+            $warna = $item->warna ? $item->warna : '';           // Handle jika warna null
+
+            // Gabung string: "Baju Karate" + "Merah" + "Drill"
+            // Gunakan trim agar tidak ada spasi berlebih jika ada yang kosong
+            $namaLengkap = trim($item->nama . ' ' . $warna . ' ' . $namaBahan);
+
+            return [
+                'id' => $item->id,
+                'nama_tampil' => $namaLengkap // Ini yang akan tampil di Android
+            ];
+        });
+
+        return response()->json($formatted);
+    }
+
+// Endpoint untuk Get Size berdasarkan ID Produk yang dipilih
+    public function getSizeByProduk($idProduk)
+    {
+        // 1. Cari dulu produknya untuk tahu dia masuk Kategori apa
+        $produk = \App\Models\Produk::find($idProduk);
+
+        if (!$produk) {
+            return response()->json([]);
+        }
+
+        // 2. Ambil Size yang idKategori-nya sama dengan produk tersebut
+        // Contoh: Jika pilih Baju, hanya muncul S, M, L, XL
+        // Jika pilih Sabuk, hanya muncul Kecil, Standar (Sesuai database Anda)
+        $sizes = \App\Models\Size::where('idKategori', $produk->idKategori)
+            ->orderBy('id', 'asc') // Atau urutkan custom jika perlu
+            ->get(['id', 'tipe']); // Ambil ID dan Tipe (Label)
+
+        return response()->json($sizes);
+    }
+
+
 }
